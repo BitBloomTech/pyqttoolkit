@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from os import path
 import re
 
@@ -15,6 +15,7 @@ def find_version():
 setup(
     name='pyqttoolkit',
     version=find_version(),
+    packages=find_packages(),
     install_requires=[
         'pyqt5==5.9.2',
         'matplotlib',
