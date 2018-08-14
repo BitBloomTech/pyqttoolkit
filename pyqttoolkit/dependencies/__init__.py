@@ -1,8 +1,8 @@
 import inspect
 
 class MissingDependency(Exception):
-    def __init__(self, dependency_name):
-        Exception.__init__(self, dependency_name)
+    def __init__(self, object_type, dependency_name):
+        Exception.__init__(self, object_type, dependency_name)
 
 class DependencyContainer:
     def __init__(self):
@@ -23,7 +23,7 @@ class DependencyContainer:
         all_dependencies = {**self._instances, **(extras or {})}
         for a in args:
             if not a in all_dependencies.keys():
-                raise MissingDependency(a)
+                raise MissingDependency(type_, a)
         return type_(**{a: all_dependencies[a] for a in args})
     
     def resolve_for(self, type_for, base_type, extras=None):
