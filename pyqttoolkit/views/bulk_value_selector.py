@@ -1,27 +1,17 @@
 #pylint: disable=no-name-in-module
 from PyQt5.QtCore import pyqtSignal, QItemSelectionModel
-from PyQt5.Qt import QWidget, QGridLayout, QListView, QAbstractItemModel, QStringListModel
+from PyQt5.Qt import QWidget, QGridLayout, QAbstractItemModel, QStringListModel
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import auto_property
 from pyqttoolkit.models.roles import DataRole
-
-class ListView(QListView):
-    def __init__(self, parent):
-        QListView.__init__(self, parent)
-    
-    selectedItemsChanged = pyqtSignal()
-    
-    def selectionChanged(self, current_selection, previous_selection):
-        result = QListView.selectionChanged(self, current_selection, previous_selection)
-        self.selectedItemsChanged.emit()
-        return result
+from .list_view import ListView
 
 class BulkValueSelectorWidget(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self, parent)
         self._value_selector = ListView(self)
-        self._value_selector.setSelectionMode(QListView.ExtendedSelection)
+        self._value_selector.setSelectionMode(ListView.ExtendedSelection)
         self._value_selector.selectedItemsChanged.connect(lambda: self.selectedValuesChanged.emit(self.selectedValues))
 
         self._layout = QGridLayout(self)

@@ -26,3 +26,4 @@ from .check_box import BindableCheckBox
 from .bulk_value_selector import BulkValueSelectorWidget
 from .datetime_range_selector import DatetimeRangeSelectorWidget
 from .count_selector import CountSelectorWidget
+from .list_view import ListView
