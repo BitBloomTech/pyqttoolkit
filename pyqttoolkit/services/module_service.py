@@ -34,7 +34,7 @@ class ModuleService(QObject):
         if module.id in self._registered_modules:
             raise ValueError('module')
         self._registered_modules[module.id] = module
-        if module.launcher_config:
+        if module.launcher_config and self._project_updater is not None and self._project_manager is not None:
             self._project_updater.projectUpdated.connect(self._project_update_handler(module))
         
     def _project_update_handler(self, module):
