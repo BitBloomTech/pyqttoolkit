@@ -87,7 +87,8 @@ Icon {{
     border-radius: 2px;
 }}
 QPushButton {{
-    background-color: transparent
+    background-color: transparent;
+    border: none;
 }}
 """.format(color=format_color(self._background_color, ColorFormat.rgba_string_256, max(self._background_opacity, self._background_opacity_stop)))
         self.setStyleSheet(stylesheet)

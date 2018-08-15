@@ -35,4 +35,38 @@ QLabel, QCheckBox, QGroupBox {{
 QLabel:disabled, QCheckBox:disabled, QGroupBox:disabled {{
     color: {color_a('module_text', 0.6)};
 }}
+
+QPushButton:disabled {{
+background-color:#ccc;
+}}
+
+QPushButton {{
+color: #333;
+border: 1px solid #555;
+padding: 3px;
+background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
+}}
+
+QPushButton[class=highlight] {{
+color: #333;
+border: 1px solid #555;
+padding: 3px;
+background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #ff609a);
+}}
+
+QPushButton:hover {{
+background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #bbb);
+}}
+
+QPushButton:hover[class=highlight] {{
+background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #ffa3c4);
+}}
+
+QPushButton:pressed {{
+background: qradialgradient(cx: 0.4, cy: -0.1, fx: 0.4, fy: -0.1, radius: 1.35, stop: 0 #fff, stop: 1 #ddd);
+}}
+
+QPushButton:pressed[class=highlight] {{
+background: qradialgradient(cx: 0.4, cy: -0.1, fx: 0.4, fy: -0.1, radius: 1.35, stop: 0 #fff, stop: 1 #ff93ba);
+}}
 """

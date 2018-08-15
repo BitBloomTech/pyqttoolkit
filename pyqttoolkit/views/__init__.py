@@ -18,7 +18,6 @@ from .text_edit import TextEdit
 from .metadata_selector import MetadataSelector, MetadataSelectorDropDown
 from .default_text_line_edit import DefaultTextLineEdit
 from .icon_button import IconButton, BindableIconButton
-from .styleable import StyleableWidget
 from .main_window import MainWindow
 from .icon import Icon
 from .dtype_edit import FloatEdit, IntEdit, InfFloatLineEdit, AutoFloatLineEdit
@@ -27,3 +26,4 @@ from .bulk_value_selector import BulkValueSelectorWidget
 from .datetime_range_selector import DatetimeRangeSelectorWidget
 from .count_selector import CountSelectorWidget
 from .list_view import ListView
+from .styleable import make_styleable

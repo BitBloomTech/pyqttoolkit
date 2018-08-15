@@ -1,16 +1,16 @@
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QFile, QHBoxLayout, QSize, Qt
+from PyQt5.Qt import QFile, QHBoxLayout, QSize, Qt, QWidget
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtXml import QDomDocument
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.colors import format_color, ColorFormat
 from pyqttoolkit.services.theme_manager import ThemeManager
-from .styleable import StyleableWidget
+from .styleable import make_styleable
 
-class Icon(StyleableWidget):
+class Icon(QWidget):
     def __init__(self, parent, icon, size=None, padding=None):
-        StyleableWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         padding = padding or 0
         self._theme_manager = ThemeManager.get(self)
 
@@ -36,7 +36,9 @@ class Icon(StyleableWidget):
         return format_color(self._theme_manager.get_color('button_foreground'), ColorFormat.rgb_string_256)
     
     def setEnabled(self, enabled):
-        StyleableWidget.setEnabled(self, enabled)
+        QWidget.setEnabled(self, enabled)
         self._svgdoc.documentElement().setAttribute('fill', self._get_color())
         self._svgdoc.documentElement().setAttribute('fill-opacity', '1' if self.isEnabled() else '0.4')
         self._icon_widget.load(self._svgdoc.toByteArray())
+
+Icon = make_styleable(Icon)
