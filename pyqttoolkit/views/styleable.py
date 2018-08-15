@@ -1,5 +1,5 @@
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QWidget, QStyleOption, QStyle, QPainter
+from PyQt5.Qt import QStyleOption, QStyle, QPainter
 #pylint: enable=no-name-in-module
 
 def _get_paintEvent(cls):

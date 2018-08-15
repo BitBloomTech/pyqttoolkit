@@ -16,5 +16,5 @@ ShrunkPushButton = make_styleable(ShrunkPushButton)
 
 class VShrunkPushButton(ShrunkPushButton):
     def __init__(self, text, parent):
-        ShrunkPushButton.__init__(self, text, parent)
+        super(VShrunkPushButton, self).__init__(self, text, parent)
         self.setFixedHeight(22)

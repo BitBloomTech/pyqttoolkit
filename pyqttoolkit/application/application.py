@@ -5,7 +5,7 @@ import logging
 from PyQt5.Qt import QApplication, QWidget, pyqtSignal
 #pyline: enable=no-name-in-module
 
-from pyqttoolkit.services import ModuleService, MessageBoard, TaskRunner, ToolWindowService, FileDialogService, EventRegistry, ObjectConverter
+from pyqttoolkit.services import MessageBoard, TaskRunner, ToolWindowService, EventRegistry, ObjectConverter
 from pyqttoolkit.dependencies import DependencyContainer
 
 LOGGER = logging.getLogger(__name__)
