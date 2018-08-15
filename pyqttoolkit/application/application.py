@@ -46,6 +46,8 @@ class Application(QApplication):
     
     def _handle_exception(self, ex_type, ex_value, traceback_obj):
         LOGGER.error('Application Exception: %s, %s', ex_type, ex_value)
+        if self._handling_exception:
+            return
         self._handling_exception = True
         self._perform_exception_handling(ex_type, ex_value, traceback_obj)
         self._handling_exception = False
