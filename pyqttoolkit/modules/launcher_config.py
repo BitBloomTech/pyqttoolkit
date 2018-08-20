@@ -1,17 +1,8 @@
-from enum import Enum
-
 #pylint: disable=no-name-in-module
 from PyQt5.Qt import QObject, pyqtSignal
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import AutoProperty
-
-class LauncherMenu(Enum):
-    file = 0
-    manage = 1
-    analyse = 2
-    report = 3
-    help = 4
 
 class LauncherConfig(QObject):
     def __init__(self):
