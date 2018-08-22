@@ -43,16 +43,21 @@ class _RectangleSelector(RectangleSelector):
         RectangleSelector._press(self, event)
 
 class MatPlotLibBase(QWidget):
-    def __init__(self, parent, file_dialog_service, h_margin=(0.8, 0.1), v_margin=(0.5, 0.15)):
+    def __init__(self,
+        parent, file_dialog_service,
+        h_margin=(0.8, 0.1), v_margin=(0.5, 0.15),
+        h_axes=[Size.Scaled(1.0)], v_axes=[Size.Scaled(1.0)],
+        nx_default=1, ny_default=1
+        ):
         QWidget.__init__(self, parent)
         self._file_dialog_service = file_dialog_service
         self._figure = Figure()
         self._canvas = FigureCanvas(self._figure)
-        h = [Size.Fixed(h_margin[0]), Size.Scaled(1.0), Size.Fixed(h_margin[1])]
-        v = [Size.Fixed(v_margin[0]), Size.Scaled(1.0), Size.Fixed(v_margin[1])]
+        h = [Size.Fixed(h_margin[0]), *h_axes, Size.Fixed(h_margin[1])]
+        v = [Size.Fixed(v_margin[0]), *v_axes, Size.Fixed(v_margin[1])]
         self._divider = Divider(self._figure, (0.0, 0.0, 1.0, 1.0), h, v, aspect=False)
         self._axes = LocatableAxes(self._figure, self._divider.get_position())
-        self._axes.set_axes_locator(self._divider.new_locator(nx=1, ny=1))
+        self._axes.set_axes_locator(self._divider.new_locator(nx=nx_default, ny=ny_default))
         for spine in ['top', 'right']:
             self._axes.spines[spine].set_visible(False)
         self._figure.add_axes(self._axes)
