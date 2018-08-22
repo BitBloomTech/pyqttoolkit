@@ -114,6 +114,7 @@ class MatPlotLibBase(QWidget):
         self.addAction(self._copy_image_action)
 
         self._table_view = None
+        self._single_axis_zoom_enabled = True
 
     enabledToolsChanged = pyqtSignal()
     spanChanged = pyqtSignal(SpanModel)
@@ -165,12 +166,12 @@ class MatPlotLibBase(QWidget):
         in_x = self._in_x_scroll_zone(event)
         in_y = self._in_y_scroll_zone(event)
         if in_x or in_y and event.button in ['up', 'down']:
-            (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
-            if in_x:
+            (x_min, x_max), (y_min, y_max) = self._get_actual_xy_extents()
+            if (in_x and self._single_axis_zoom_enabled) or (in_x and in_y):
                 skew = self._zoom_skew and self._zoom_skew[0]
                 skew = self._interval_skew(event.x, self._axes.bbox.intervalx) if skew is None else skew
                 x_min, x_max = self._zoom(x_min, x_max, skew, event.button)
-            if in_y:
+            if (in_y and self._single_axis_zoom_enabled) or (in_x and in_y):
                 skew = self._zoom_skew and self._zoom_skew[1]
                 skew = self._interval_skew(event.y, self._axes.bbox.intervaly) if skew is None else skew
                 y_min, y_max = self._zoom(y_min, y_max, skew, event.button)
@@ -214,6 +215,9 @@ class MatPlotLibBase(QWidget):
             (x_min, x_max), (y_min, y_max) = self.data.get_xy_extents()
             return self._pad_extent(x_min, x_max, self.x_extent_padding), self._pad_extent(y_min, y_max, self.y_extent_padding)
         return self._xy_extents
+
+    def _get_actual_xy_extents(self):
+        return self._axes.get_xlim(), self._axes.get_ylim()
     
     def _pad_extent(self, min_, max_, padding):
         min_, max_ = self._zero_if_nan(min_), self._zero_if_nan(max_)
