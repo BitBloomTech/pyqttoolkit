@@ -440,13 +440,13 @@ class MatPlotLibBase(QWidget):
 
     def copyToClipboard(self):
         with BytesIO() as buffer:
-            self._figure.savefig(buffer)
+            self._figure.savefig(buffer, facecolor=self._figure.get_facecolor())
             QApplication.clipboard().setImage(QImage.fromData(buffer.getvalue()))
 
     def saveAsImage(self):
         filename = self._file_dialog_service.get_save_filename(self, self.tr('Portable Network Graphics (*.png)'))
         if filename:
-            self._figure.savefig(filename)
+            self._figure.savefig(filename, facecolor=self._figure.get_facecolor())
 
     def showTable(self):
         if self.canShowTable():
