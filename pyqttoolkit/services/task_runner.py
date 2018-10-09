@@ -81,7 +81,7 @@ class TaskRunner(QObject):
         self._threadpool = QThreadPool()
         self._cancelled = False
 
-    def run_task(self, task_function, task_args, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, long_running=False, show_progress=True):
+    def run_task(self, task_function, task_args, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, long_running=False, show_progress=True, background=False):
         """function::runTask(self, task_function, task_args, on_completed, on_error)
         :param task_function: The function to execute
         :param task_args: The arguments to pass to the function
@@ -135,7 +135,7 @@ class TaskRunner(QObject):
         worker = Worker(task_delegate, task_args)
         worker.signals.result.connect(_on_result)
         worker.signals.error.connect(_on_error)
-        self._threadpool.start(worker)
+        self._threadpool.start(worker, 10 if background else 0)
 
     def update_progress(self, percent, message):
         self.progress = float(percent)

@@ -5,6 +5,8 @@ import logging
 from math import isnan
 from weakref import ref, WeakKeyDictionary
 
+from pyqttoolkit.logs import TRACE
+
 LOGGER = logging.getLogger(__name__)
 
 def updater(obj, name):
@@ -124,13 +126,13 @@ class AutoProperty:
                 raise ValueError(f'No setter provided for property {self._name}')
             self._fset(obj, value)
         elif self._name not in obj.__dict__ or not values_equal(obj.__dict__[self._name], value):
-            LOGGER.debug('Setting %s.%s to %s', obj, self._name, value)
+            LOGGER.log(TRACE, 'Setting %s.%s to %s', obj, self._name, value)
             obj.__dict__[self._name] = value
             if self._notify_depth == self._max_notify_depth:
                 LOGGER.error('Maximum notify depth exceeded for %s.%s', obj, self._name)
             if self._notify and self._notify_depth <= self._max_notify_depth:
                 self._notify_depth += 1
-                LOGGER.debug('Notifying change of %s.%s to %s', obj, self._name, value)
+                LOGGER.log(TRACE, 'Notifying change of %s.%s to %s', obj, self._name, value)
                 self._notify.__get__(obj, type(obj)).emit(value)
                 self._notify_depth -= 1
 
