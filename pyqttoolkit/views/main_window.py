@@ -32,12 +32,13 @@ QMainWindow, QDialog {{
 QLabel, QCheckBox, QGroupBox {{
     color: {color('module_text')}
 }}
-QLabel:disabled, QCheckBox:disabled, QGroupBox:disabled {{
+QLabel:disabled, QCheckBox:disabled, QGroupBox:disabled, QPushButton:disabled {{
     color: {color_a('module_text', 0.6)};
 }}
 
 QPushButton:disabled {{
 background-color:#ccc;
+border: 1px solid {color_a('module_text', 0.6)};
 }}
 
 QPushButton {{

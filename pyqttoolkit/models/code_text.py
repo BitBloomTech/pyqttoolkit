@@ -10,11 +10,14 @@ class CodeTextModel(QObject):
         self.textChanged.connect(self._validate)
         self._validator = validator
         self.text = ''
+        self.output = ''
 
     textChanged = pyqtSignal(str)
+    outputChanged = pyqtSignal(str)
     validationMessageChanged = pyqtSignal(str)
 
     text = AutoProperty(str)
+    output = AutoProperty(str)
     validationMessage = AutoProperty(str)
 
     def _validate(self, value):

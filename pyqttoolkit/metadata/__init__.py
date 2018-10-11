@@ -1,4 +1,5 @@
 from .dict_metadata_manager import DictMetadataManager
+from .id_generator import next_id
 try:
     from .dataframe_metadata_manager import DataframeMetadataManager
 except ImportError:
