@@ -7,6 +7,8 @@ from uuid import uuid4
 from PyQt5.Qt import pyqtSignal
 #pylint: enable=no-name-in-module
 
+from pyqttoolkit.modules.events import RejectableEvent
+
 from .main_window import MainWindow
 
 class ModuleWindow(MainWindow):
@@ -39,6 +41,12 @@ class ModuleWindow(MainWindow):
         """function::closeEvent(self, event)
         Decorates the base class with a closing event
         """
+        if hasattr(self.centralWidget(), 'prepareClose'):
+            close_event = RejectableEvent()
+            self.centralWidget().prepareClose(close_event)
+            if not close_event.accepted:
+                event.ignore()
+                return
         MainWindow.closeEvent(self, event)
         if event.isAccepted():
             self.centralWidget().close()
