@@ -16,5 +16,5 @@ class ScriptContext:
     def output(self):
         return self._output
 
-    def add_output(self, *values):
-        self._output += ' '.join(str(v) for v in values) + '\r\n'
+    def add_output(self, value):
+        self._output += value
