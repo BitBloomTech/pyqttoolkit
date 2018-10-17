@@ -45,7 +45,21 @@ class CodeEdit(QWidget):
         self._text_edit.editComplete.connect(self.editComplete)
     
     editComplete = pyqtSignal(str)
+
+    @property
+    def textEdit(self):
+        return self._text_edit
     
+    @property
+    def outputPane(self):
+        return self._output_pane
+    
+    def setFontSize(self, font_size):
+        self._text_edit.document().setDefaultFont(QFont('Courier', pointSize=font_size))
+        self._output_pane.document().setDefaultFont(QFont('Courier', pointSize=font_size))
+        self._text_edit.setTabStopWidth(font_size * 2)
+        self._output_pane.setTabStopWidth(font_size * 2)
+
     def setModel(self, model):
         self._text_edit.setPlainText(model.text)
         self._output_pane.setPlainText(model.output)
