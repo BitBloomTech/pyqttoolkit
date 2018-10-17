@@ -24,7 +24,10 @@ setup(
     ],
     extras_require={
         'dev': [
-            'tox'
+            'tox',
+            'pytest',
+            'pytest-asyncio',
+            'pytest-qt'
         ]
     }
 )

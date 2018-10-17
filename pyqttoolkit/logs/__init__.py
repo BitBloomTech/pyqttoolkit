@@ -53,6 +53,7 @@ def configure_logging(log_level, console):
     if console:
         console_handler = logging.StreamHandler()
         console_handler.setLevel(numeric_level)
+        console_handler.setFormatter(file_formatter)
         logging.getLogger().addHandler(console_handler)
 
 def log_debug(_f):
