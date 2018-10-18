@@ -8,6 +8,8 @@ from PyQt5.Qt import (
 )
 #pylint: enable=no-name-in-module
 
+from .python_syntax import PythonHighlighter
+
 class LineNumberArea(QWidget):
     def __init__(self, editor):
         QWidget.__init__(self, editor)
@@ -33,6 +35,8 @@ class CodeTextEdit(QPlainTextEdit):
         self.cursorPositionChanged.connect(self.highlightCurrentLine)
 
         self.updateLineNumberAreaWidth(0)
+
+        self._key_press_rules = None
 
     editComplete = pyqtSignal(str)
 
@@ -104,7 +108,7 @@ class CodeTextEdit(QPlainTextEdit):
         if self.hasFocus() and not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
 
-            line_color = QColor(Qt.yellow).lighter(160)
+            line_color = QColor(Qt.yellow).lighter(180)
 
             selection.format.setBackground(line_color)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
@@ -112,6 +116,17 @@ class CodeTextEdit(QPlainTextEdit):
             selection.cursor.clearSelection()
             extra_selections.append(selection)
         self.setExtraSelections(extra_selections)
+
+    def setKeyPressRules(self, rules):
+        self._key_press_rules = rules
+
+    def keyPressEvent(self, event):
+        if event and self._key_press_rules:
+            next_text = self._key_press_rules.getText(event.key())
+            if next_text:
+                self.insertPlainText(next_text)
+                return
+        QPlainTextEdit.keyPressEvent(self, event)
 
 class CodeEdit(QWidget):
     def __init__(self, parent):
@@ -140,8 +155,7 @@ class CodeEdit(QWidget):
         self._layout.addWidget(self._splitter, 0, 0)
 
         self._text_edit.editComplete.connect(self.editComplete)
-
-    
+   
     editComplete = pyqtSignal(str)
 
     @property
@@ -189,3 +203,37 @@ class CodeEdit(QWidget):
             palette = self.style().standardPalette()
         self._text_edit.setPalette(palette)
         self._text_edit.setToolTip(message or None)
+
+class PythonCodeEdit(CodeEdit):
+    def __init__(self, parent):
+        CodeEdit.__init__(self, parent)
+        self._highlighter = PythonHighlighter(self.textEdit.document())
+        self.textEdit.setKeyPressRules(PythonKeyPressRules(self.textEdit, 4))
+
+class KeyPressRules:
+    def getText(self, key):
+        raise NotImplementedError()
+
+class PythonKeyPressRules(KeyPressRules):
+    def __init__(self, text_edit, tab_width):
+        self._text_edit = text_edit
+        self._tab_width = tab_width
+
+    def getText(self, key):
+        if key in [Qt.Key_Tab, Qt.Key_Backtab]:
+            return ' ' * self._tab_width
+        if key in [Qt.Key_Return, Qt.Key_Enter]:
+            current_position = self._text_edit.textCursor().positionInBlock()
+            current_line = self._text_edit.textCursor().block().text()
+            if current_position == len(current_line):
+                if current_line.strip() and current_line.strip()[-1] == ':':
+                    return '\n' + ' ' * self._tab_width
+                n_spaces = 0
+                for c in current_line:
+                    if c == ' ':
+                        n_spaces += 1
+                    else:
+                        break
+                return '\n' + ' ' * n_spaces
+        return None
+            

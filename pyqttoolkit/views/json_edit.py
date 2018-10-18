@@ -1,4 +1,4 @@
-from .code_edit import CodeEdit
+from .code import CodeEdit
 
 class JsonEdit(CodeEdit):
     def __init__(self, parent):

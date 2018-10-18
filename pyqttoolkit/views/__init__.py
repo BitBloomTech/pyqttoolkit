@@ -13,7 +13,7 @@ from .table import TableView
 from .property_tree import PropertyTreeView
 from .json_edit import JsonEdit
 from .file_selector import FileSelector
-from .code_edit import CodeEdit
+from .code import CodeEdit, PythonCodeEdit
 from .text_edit import TextEdit
 from .metadata_selector import MetadataSelector, MetadataSelectorDropDown
 from .default_text_line_edit import DefaultTextLineEdit
