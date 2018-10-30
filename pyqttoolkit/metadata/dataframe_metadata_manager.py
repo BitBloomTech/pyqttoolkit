@@ -40,7 +40,7 @@ class DataframeMetadataManager(MetadataManagerBase):
         if not property_.name in self.metadata[property_type_key].columns:
             self.metadata[property_type_key].loc[:, property_.name] = None
         value_to_store = deepcopy(value)
-        if isinstance(value_to_store, dict):
+        if isinstance(value_to_store, dict) or isinstance(value_to_store, list):
             value_to_store = 'json:' + json.dumps(value_to_store)
         self.metadata[property_type_key].loc[id_, property_.name] = value_to_store
     
