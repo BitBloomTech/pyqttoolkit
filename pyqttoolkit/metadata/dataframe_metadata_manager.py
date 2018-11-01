@@ -39,10 +39,7 @@ class DataframeMetadataManager(MetadataManagerBase):
             self.metadata[property_type_key].loc[id_, :] = None
         if not property_.name in self.metadata[property_type_key].columns:
             self.metadata[property_type_key].loc[:, property_.name] = None
-        value_to_store = deepcopy(value)
-        if isinstance(value_to_store, dict) or isinstance(value_to_store, list):
-            value_to_store = 'json:' + json.dumps(value_to_store)
-        self.metadata[property_type_key].loc[id_, property_.name] = value_to_store
+        self.metadata[property_type_key].loc[id_, property_.name] = self._get_value_to_store(value)
     
     def get_properties(self, id_, property_type):
         property_type_key = self._get_property_type_key(property_type)
@@ -62,7 +59,7 @@ class DataframeMetadataManager(MetadataManagerBase):
             self.metadata[property_type_key].loc[id_, :] = None
             if properties:
                 for p, v in properties.items():
-                    self.metadata[property_type_key].loc[id_, p] = deepcopy(v)
+                    self.metadata[property_type_key].loc[id_, p] = self._get_value_to_store(v)
         
     def delete_properties(self, id_, property_type):
         if id_ is None:
@@ -84,3 +81,9 @@ class DataframeMetadataManager(MetadataManagerBase):
     @staticmethod
     def columns(property_type):
         return [pt.name for pt in property_type]
+    
+    def _get_value_to_store(self, value):
+        value_to_store = deepcopy(value)
+        if isinstance(value_to_store, dict) or isinstance(value_to_store, list):
+            value_to_store = 'json:' + json.dumps(value_to_store)
+        return value_to_store
