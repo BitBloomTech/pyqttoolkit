@@ -6,3 +6,4 @@ class ToolType(Enum):
     span = 2
     pan = 3
     reset = 4
+    options = 5

@@ -13,7 +13,8 @@ class PlotToolbarWidget(QWidget):
         ToolType.reset: 'crosshair.svg',
         ToolType.polygon: 'polygon.svg',
         ToolType.pan: 'pan.svg',
-        ToolType.span: 'width.svg'
+        ToolType.span: 'width.svg',
+        ToolType.options: 'options.svg'
     }
 
     def __init__(self, parent, plotview):
@@ -27,7 +28,8 @@ class PlotToolbarWidget(QWidget):
             ToolType.zoom: self.tr('Zoom to Selection'),
             ToolType.polygon: self.tr('Draw Polygon'),
             ToolType.pan: self.tr('Pan'),
-            ToolType.span: self.tr('Span')
+            ToolType.span: self.tr('Span'),
+            ToolType.options: self.tr('Options'),
         }
 
         self._reset = IconButton(self.tool_icons[ToolType.reset], self._tool_names[ToolType.reset], self, QSize(30, 30), 4)
