@@ -35,10 +35,11 @@ FloatEdit = _type_editor(float, 0.0)
 IntEdit = _type_editor(int, 0)
 
 class InfFloatLineEdit(LineEdit):
-    def __init__(self, parent):
+    def __init__(self, parent, formatter=None):
         LineEdit.__init__(self, parent)
         self.editComplete.connect(self._handle_edit_complete)
         self.valueChanged.connect(self._handle_value_changed)
+        self._formatter = formatter
     
     valueChanged = pyqtSignal(float)
     value = AutoProperty(float)
@@ -47,22 +48,29 @@ class InfFloatLineEdit(LineEdit):
         try:
             self.value = float(self.text())
         except ValueError:
-            self.setText(str(self.value))
+            self.setText(self._get_text(self.value))
     
     def _handle_value_changed(self, value):
-        self.setText(str(value))
-    
+        self.setText(self._get_text(value))
+
+    def _get_text(self, value):
+        if self._formatter is not None:
+            return self._formatter(value)
+        else:
+            return str(value)
+
 class AutoFloatLineEdit(InfFloatLineEdit):
-    def __init__(self, parent, allow_inf=True):
-        InfFloatLineEdit.__init__(self, parent)
+    def __init__(self, parent, allow_inf=True, default_text=None, formatter=None):
+        InfFloatLineEdit.__init__(self, parent, formatter)
         self._allow_inf = allow_inf
+        self._default_text_ = default_text or self.tr('Auto')
 
     @property
-    def _auto(self):
-        return self.tr('Auto')
+    def _default_text(self):
+        return self._default_text_
     
     def _handle_edit_complete(self):
-        if self.text().lower() == self._auto.lower() and not isnan(self.value):
+        if self.text().lower() == self._default_text.lower() and not isnan(self.value):
             self._reset()
         else:
             if not self._allow_inf:
@@ -75,13 +83,13 @@ class AutoFloatLineEdit(InfFloatLineEdit):
     
     def _reset(self):
         self.value = float('nan')
-        self.setText(self._auto)
+        self.setText(self._default_text)
     
     def _handle_value_changed(self, value):
         if isnan(value):
-            self.setText(self._auto)
+            self.setText(self._default_text)
         else:
             InfFloatLineEdit._handle_value_changed(self, value)
 
     def setText(self, value):
-        InfFloatLineEdit.setText(self, self._auto if value == 'nan' else value)
+        InfFloatLineEdit.setText(self, self._default_text if value == 'nan' else value)
