@@ -4,7 +4,7 @@ from PyQt5.Qt import QAbstractTableModel, Qt, QVariant, QModelIndex, QItemSelect
 #pylint: enable=no-name-in-module
 
 class DataFrameTableModel(QAbstractTableModel):
-    def __init__(self, parent, data, display_column=None, editable=False):
+    def __init__(self, parent, data, display_column=None, editable=False, row_headers=False):
         QAbstractTableModel.__init__(self, parent)
         self._data = data.copy()
         self._display_column_index = (
@@ -13,6 +13,7 @@ class DataFrameTableModel(QAbstractTableModel):
         )
         self._selection_model = QItemSelectionModel(self)
         self._editable = editable
+        self._row_headers = row_headers
 
     dataUpdated = pyqtSignal()
 
@@ -26,7 +27,9 @@ class DataFrameTableModel(QAbstractTableModel):
         role = role or Qt.DisplayRole
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                return self._data.columns[section]
+                return str(self._data.columns[section])
+            elif self._row_headers:
+                return str(self._data.index[section])
         return None
     
     def flags(self, _index):

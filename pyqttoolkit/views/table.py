@@ -2,7 +2,7 @@
 Defines the SynthesisView class
 """
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QTableView, QKeySequence, QApplication, QMenu, QAction
+from PyQt5.Qt import QTableView, QKeySequence, QApplication, QMenu, QAction, Qt
 #pylint: enable=no-name-in-module
 
 class TableView(QTableView):
@@ -12,12 +12,16 @@ class TableView(QTableView):
         self._copy_action = QAction(self.tr('Copy'), self)
         self._copy_action.triggered.connect(self.copy)
         self._copy_action.setShortcuts(QKeySequence.Copy)
+        self._copy_with_headers_action = QAction(self.tr('Copy With Headers'), self)
+        self._copy_with_headers_action.triggered.connect(self.copyWithHeaders)
         self._paste_action = QAction(self.tr('Paste'), self)
         self._paste_action.triggered.connect(self.paste)
         self._paste_action.setShortcuts(QKeySequence.Paste)
         self._menu.addAction(self._copy_action)
+        self._menu.addAction(self._copy_with_headers_action)
         self._menu.addAction(self._paste_action)
         self.addAction(self._copy_action)
+        self.addAction(self._copy_with_headers_action)
         self.addAction(self._paste_action)
     
     @property
@@ -42,18 +46,37 @@ class TableView(QTableView):
             model.setParent(self)
     
     def copy(self):
+        self._do_copy()
+    
+    def copyWithHeaders(self):
+        self._do_copy(include_headers=True)
+    
+    def _do_copy(self, include_headers=False):
         indexes = self._get_selected_indexes()
         current_row = None
         paste_data = ''
+        columns = []
+        columns_added = []
+        row_header_added = False
         for i in indexes:
+            if include_headers and i.column() not in columns_added:
+                columns.append(self.model().headerData(i.column(), Qt.Horizontal))
+                columns_added.append(i.column())
             if current_row is not None:
                 if i.row() != current_row:
                     paste_data += '\n'
+                    row_header_added = False
                 else:
                     paste_data += '\t'
+            if include_headers and not row_header_added:
+                paste_data += self.model().headerData(i.row(), Qt.Vertical) + '\t'
+                row_header_added = True
             data = self.model().data(i)
             paste_data += str(data) if data is not None else ''
             current_row = i.row()
+        if include_headers:
+            header_row = '\t' + '\t'.join(columns) + '\n'
+            paste_data = header_row + paste_data
         QApplication.clipboard().setText(paste_data)
     
     def paste(self):
