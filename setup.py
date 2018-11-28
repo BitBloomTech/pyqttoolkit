@@ -20,7 +20,8 @@ setup(
         'pyqt5==5.9.2',
         'matplotlib',
         'jinja2',
-        'pandas'
+        'pandas',
+        'fonttools==3.32.0'
     ],
     extras_require={
         'dev': [

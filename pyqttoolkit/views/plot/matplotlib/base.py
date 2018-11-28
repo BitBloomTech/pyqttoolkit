@@ -7,6 +7,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.Qt import QVBoxLayout, QWidget, QSize, QTimer, QMenu, QAction, QApplication, QImage, QKeySequence
 #pylint: enable=no-name-in-module
 
+import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
@@ -17,6 +18,7 @@ from pyqttoolkit.models import SpanModel
 from pyqttoolkit.views import TableView
 
 from ..tool_type import ToolType
+from .font import MatPlotLibFont
 
 class _SpanSeletor(SpanSelector):
     def __init__(self, *args, **kwargs):
@@ -100,6 +102,7 @@ class MatPlotLibBase(QWidget):
         self._pan_event = None
         self._pending_draw = None
         self._pending_artists_draw = None
+        self._other_draw_events = []
         self._draw_timer = QTimer()
         self._draw_timer.timeout.connect(self._do_draw_events)
         self._draw_timer.start(20)
@@ -120,11 +123,18 @@ class MatPlotLibBase(QWidget):
 
         self._table_view = None
         self._single_axis_zoom_enabled = True
+        self._cached_label_width_height = None
+
+        if hasattr(type(self), 'dataChanged'):
+            self.dataChanged.connect(self._on_data_changed)
 
     enabledToolsChanged = pyqtSignal()
     spanChanged = pyqtSignal(SpanModel)
 
     span = AutoProperty(SpanModel)
+
+    def _on_data_changed(self):
+        self._cached_label_width_height = None
 
     def closeEvent(self, event):
         QWidget.closeEvent(self, event)
@@ -196,6 +206,7 @@ class MatPlotLibBase(QWidget):
         return min_, max_
 
     def _set_axes_limits(self):
+        self._update_ticks()
         (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
         self._axes.set_xlim(x_min, x_max)
         self._axes.set_ylim(y_min, y_max)
@@ -370,6 +381,7 @@ class MatPlotLibBase(QWidget):
             self._decoration_artists.remove(artist)
     
     def _handle_resize(self, _event):
+        self._update_ticks()
         return self.draw()
 
     def draw(self, artists=None):
@@ -401,6 +413,13 @@ class MatPlotLibBase(QWidget):
         if self._pending_artists_draw is not None:
             self._pending_artists_draw()
             self._pending_artists_draw = None
+        if self._other_draw_events:
+            for draw_event in self._other_draw_events:
+                draw_event()
+            self._other_draw_events = []
+
+    def addDrawEvent(self, draw_event):
+        self._other_draw_events.append(draw_event)
 
     def resetZoom(self):
         self._xy_extents = None
@@ -455,3 +474,54 @@ class MatPlotLibBase(QWidget):
             self._table_view.setModel(self.data.table)
             self._table_view.setMinimumSize(800, 600)
             self._table_view.show()
+
+    def _update_ticks(self):
+        if not self.data:
+            return
+        if hasattr(self.data, 'x_labels'):
+            step = self.data.x_tick_interval if hasattr(self.data, 'x_tick_interval') else None
+            x_ticks, x_labels = self._get_labels(self.data.x_labels, step, horizontal=True)
+            self._axes.set_xticks(x_ticks)
+            self._axes.set_xticklabels(x_labels)
+        if hasattr(self.data, 'y_labels'):
+            step = self.data.y_tick_interval if hasattr(self.data, 'y_tick_interval') else None
+            y_ticks, y_labels = self._get_labels(self.data.y_labels, step, horizontal=False)
+            self._axes.set_yticks(y_ticks)
+            self._axes.set_yticklabels(y_labels)
+
+    def _get_labels(self, labels, step, horizontal=True):
+        (x0, x1), (y0, y1) = self._get_xy_extents()
+        start, end = (int(x0), int(x1)) if horizontal else (int(y0), int(y1))
+        visible_points = end - start
+        if not (step and step > 0):
+            width, height = self._get_label_width_height(labels)
+            axes_bbox = self._axes.get_window_extent(self._figure.canvas.get_renderer()).transformed(self._figure.dpi_scale_trans.inverted())
+            plot_size = (axes_bbox.width if horizontal else axes_bbox.height) * self._figure.dpi
+            size = (width if horizontal else height)
+            if plot_size == 0 or size == 0:
+                n_labels = 16
+            else:
+                n_labels = int(plot_size / size)
+                if n_labels == 0:
+                    n_labels = 16
+            step = int(visible_points / n_labels) + 1
+        else:
+            step = int(step)
+        indexes = list(range(len(labels)))
+        display_labels = list(labels)
+        for i in indexes:
+            if i % step:
+                display_labels[i] = ''
+        return indexes, display_labels
+    
+    def _get_label_width_height(self, labels):
+        if not self._cached_label_width_height:
+            font = MatPlotLibFont.default()
+            width = 0
+            height = 0
+            for label in labels:
+                next_width, next_height = font.get_size(str(label), matplotlib.rcParams['font.size'], self._figure.dpi)
+                width = max(width, next_width)
+                height = max(height, next_height)
+            self._cached_label_width_height = width, height
+        return self._cached_label_width_height
