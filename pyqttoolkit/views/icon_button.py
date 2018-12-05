@@ -8,12 +8,12 @@ from pyqttoolkit.services.theme_manager import ThemeManager
 from .icon import Icon
 
 class IconButton(QPushButton):
-    def __init__(self, icon, title, parent, size=None, padding=None):
+    def __init__(self, icon, title, parent, size=None, padding=None, color=None, hover_color=None):
         QPushButton.__init__(self, parent)
         self._theme_manager = ThemeManager.get(self)
-        self._background_color = self._theme_manager.get_color('button_background_hover')
+        self._background_color = hover_color or self._theme_manager.get_color('button_background_hover')
         self.setToolTip(title)
-        self._icon = Icon(self, icon, size, padding)
+        self._icon = Icon(self, icon, size, padding, color)
         self._iconname = icon
 
         self._layout = QHBoxLayout(self)
@@ -95,8 +95,8 @@ QPushButton {{
 
 
 class BindableIconButton(IconButton):
-    def __init__(self, icon, title, parent, size=None, padding=None):
-        IconButton.__init__(self, icon, title, parent, size, padding)
+    def __init__(self, icon, title, parent, size=None, padding=None, color=None, hover_color=None):
+        IconButton.__init__(self, icon, title, parent, size, padding, color, hover_color)
         self.setCheckable(True)
         self.clicked.connect(self._handle_clicked)
         self.checkedChanged.connect(self.setChecked)

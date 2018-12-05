@@ -13,9 +13,10 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from mpl_toolkits.axes_grid1 import Size, LocatableAxes, Divider
 
-from pyqttoolkit.properties import AutoProperty
+from pyqttoolkit.properties import AutoProperty, connect_all
 from pyqttoolkit.models import SpanModel
 from pyqttoolkit.views import TableView
+from pyqttoolkit.colors import interpolate_rgb
 
 from ..tool_type import ToolType
 from .font import MatPlotLibFont
@@ -60,6 +61,8 @@ class MatPlotLibBase(QWidget):
         self._divider = Divider(self._figure, (0.0, 0.0, 1.0, 1.0), h, v, aspect=False)
         self._axes = LocatableAxes(self._figure, self._divider.get_position())
         self._axes.set_axes_locator(self._divider.new_locator(nx=nx_default, ny=ny_default))
+        self._axes.set_zorder(2)
+        self._axes.patch.set_visible(False)
         for spine in ['top', 'right']:
             self._axes.spines[spine].set_visible(False)
         self._figure.add_axes(self._axes)
@@ -127,11 +130,78 @@ class MatPlotLibBase(QWidget):
 
         if hasattr(type(self), 'dataChanged'):
             self.dataChanged.connect(self._on_data_changed)
+        
+        self._options_view = None
+        self._secondary_axes = self._secondary_y_extent = self._secondary_x_extent = None
 
     enabledToolsChanged = pyqtSignal()
     spanChanged = pyqtSignal(SpanModel)
 
     span = AutoProperty(SpanModel)
+
+    def setOptionsView(self, options_view):
+        self._options_view = options_view
+        self._options_view.setSecondaryYLimitsEnabled(self._secondary_y_enabled())
+        self._options_view.setSecondaryXLimitsEnabled(self._secondary_x_enabled())
+
+        self._options_view.showGridLinesChanged.connect(self._update_grid_lines)
+        connect_all(
+            self._handle_options_view_limit_changed,
+            self._options_view.xAxisLowerLimitChanged,
+            self._options_view.xAxisUpperLimitChanged,
+            self._options_view.yAxisLowerLimitChanged,
+            self._options_view.yAxisUpperLimitChanged
+        )
+        connect_all(
+            self._handle_options_view_secondary_limit_changed,
+            self._options_view.secondaryXAxisLowerLimitChanged,
+            self._options_view.secondaryXAxisUpperLimitChanged,
+            self._options_view.secondaryYAxisLowerLimitChanged,
+            self._options_view.secondaryYAxisUpperLimitChanged
+        )
+    
+    def _update_grid_lines(self):
+        show_grid_lines = False if self._options_view is None else self._options_view.showGridLines
+        gridline_color = self._axes.spines['bottom'].get_edgecolor()
+        gridline_color = gridline_color[0], gridline_color[1], gridline_color[2], 0.5
+        kwargs = dict(color=gridline_color, alpha=0.5) if show_grid_lines else {}
+        self._axes.grid(show_grid_lines, **kwargs)
+        self.draw()
+    
+    def _handle_options_view_limit_changed(self):
+        if self._options_view is None:
+            return
+        (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
+        new_x_min = x_min if np.isnan(self._options_view.xAxisLowerLimit) else self._options_view.xAxisLowerLimit
+        new_x_max = x_max if np.isnan(self._options_view.xAxisUpperLimit) else self._options_view.xAxisUpperLimit
+        new_y_min = y_min if np.isnan(self._options_view.yAxisLowerLimit) else self._options_view.yAxisLowerLimit
+        new_y_max = y_max if np.isnan(self._options_view.yAxisUpperLimit) else self._options_view.yAxisUpperLimit
+        if [new_x_min, new_x_max, new_y_min, new_y_max] != [x_min, x_max, y_min, y_max]:
+            self._xy_extents = (new_x_min, new_x_max), (new_y_min, new_y_max)
+            self._set_axes_limits()
+            self.draw()
+    
+    def _handle_options_view_secondary_limit_changed(self):
+        if self._options_view is None:
+            return
+        updated = False
+        if self._has_secondary_y_extent():
+            y_min, y_max = self._get_secondary_y_extent()
+            new_y_min = y_min if np.isnan(self._options_view.secondaryYAxisLowerLimit) else self._options_view.secondaryYAxisLowerLimit
+            new_y_max = y_max if np.isnan(self._options_view.secondaryYAxisUpperLimit) else self._options_view.secondaryYAxisUpperLimit
+            if [new_y_min, new_y_max] != [y_min, y_max]:
+                self._secondary_y_extent = (new_y_min, new_y_max)
+                updated = True
+        if self._has_secondary_x_extent():
+            x_min, x_max = self._get_secondary_x_extent()
+            new_x_min = x_min if np.isnan(self._options_view.secondaryXAxisLowerLimit) else self._options_view.secondaryXAxisLowerLimit
+            new_x_max = x_max if np.isnan(self._options_view.secondaryXAxisUpperLimit) else self._options_view.secondaryXAxisUpperLimit
+            if [new_x_min, new_x_max] != [x_min, x_max]:
+                self._secondary_x_extent = (new_x_min, new_x_max)
+                updated = True
+        if updated:
+            self._set_axes_limits()
+            self.draw()
 
     def _on_data_changed(self):
         self._cached_label_width_height = None
@@ -178,6 +248,8 @@ class MatPlotLibBase(QWidget):
         return self._in_interval(event.y, self._axes.bbox.intervaly) and event.x <= self._axes.bbox.intervalx[1]
 
     def _on_scroll(self, event):
+        if self._secondary_axes is not None:
+            self._handle_scroll_secondary(event)
         in_x = self._in_x_scroll_zone(event)
         in_y = self._in_y_scroll_zone(event)
         if in_x or in_y and event.button in ['up', 'down']:
@@ -193,6 +265,24 @@ class MatPlotLibBase(QWidget):
             self._xy_extents = (x_min, x_max), (y_min, y_max)
         self._set_axes_limits()
         self.draw()
+    
+    def _handle_scroll_secondary(self, event):
+        if self._has_secondary_y_extent():
+            in_secondary_y = self._in_interval(event.y, self._axes.bbox.intervaly) and event.x >= self._axes.bbox.intervalx[1]
+            if in_secondary_y and event.button in ['up', 'down']:
+                self._secondary_y_extent = self._zoom(
+                    *self._get_secondary_y_extent(),
+                    self._interval_skew(event.y, self._axes.bbox.intervaly),
+                    event.button
+                )
+        if self._has_secondary_x_extent():
+            in_secondary_x = self._in_interval(event.x, self._axes.bbox.intervalx) and event.y >= self._axes.bbox.intervaly[1]
+            if in_secondary_x and event.button in ['up', 'down']:
+                self._secondary_x_extent = self._zoom(
+                    *self._get_secondary_x_extent(),
+                    self._interval_skew(event.x, self._axes.bbox.intervalx),
+                    event.button
+                )
 
     def _get_zoom_multiplier(self):
         return 20/19
@@ -206,10 +296,44 @@ class MatPlotLibBase(QWidget):
         return min_, max_
 
     def _set_axes_limits(self):
+        if self._secondary_axes is not None:
+            self._set_secondary_axes_limits()
         self._update_ticks()
         (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
+        if self._options_view is not None:
+            if self._options_view.x_limits:
+                self._options_view.xAxisLowerLimit = float(x_min)
+                self._options_view.xAxisUpperLimit = float(x_max)
+            if self._options_view.y_limits:
+                self._options_view.yAxisLowerLimit = float(y_min)
+                self._options_view.yAxisUpperLimit = float(y_max)
         self._axes.set_xlim(x_min, x_max)
         self._axes.set_ylim(y_min, y_max)
+    
+    def _set_secondary_axes_limits(self):
+        if self._options_view is not None:
+            if self._options_view.secondary_y_limits:
+                enabled = self._secondary_y_enabled()
+                secondary_y_min, secondary_y_max = self._get_secondary_y_extent() if enabled else (float('nan'), float('nan'))
+                self._options_view.setSecondaryYLimitsEnabled(enabled)
+                self._options_view.secondaryYAxisLowerLimit = float(secondary_y_min)
+                self._options_view.secondaryYAxisUpperLimit = float(secondary_y_max)
+            if self._options_view.secondary_x_limits:
+                enabled = self._secondary_x_enabled()
+                secondary_x_min, secondary_x_max = self._get_secondary_x_extent() if enabled else (float('nan'), float('nan'))
+                self._options_view.setSecondaryXLimitsEnabled(enabled)
+                self._options_view.secondaryXAxisLowerLimit = float(secondary_x_min)
+                self._options_view.secondaryXAxisUpperLimit = float(secondary_x_max)
+        if self._has_secondary_y_extent():
+            self._secondary_axes.set_ylim(*self._get_secondary_y_extent())
+        if self._has_secondary_x_extent():
+            self._secondary_axes.set_xlim(*self._get_secondary_x_extent())
+    
+    def _secondary_y_enabled(self):
+        return True if self._secondary_axes and self._secondary_axes.get_visible() and self._has_secondary_y_extent() else False
+
+    def _secondary_x_enabled(self):
+        return True if self._secondary_axes and self._secondary_axes.get_visible() and self._has_secondary_x_extent() else False
 
     def _set_axes_labels(self):
         self._axes.set_xlabel(self.data.xAxisTitle)
@@ -231,6 +355,30 @@ class MatPlotLibBase(QWidget):
             (x_min, x_max), (y_min, y_max) = self.data.get_xy_extents()
             return self._pad_extent(x_min, x_max, self.x_extent_padding), self._pad_extent(y_min, y_max, self.y_extent_padding)
         return self._xy_extents
+    
+    def _has_secondary_y_extent(self):
+        return self._get_secondary_y_extent() is not None
+    
+    def _get_secondary_y_extent(self):
+        if not hasattr(self.data, 'get_secondary_y_extent'):
+            return None
+        if self._secondary_y_extent is not None:
+            return self._secondary_y_extent
+        if self.data is not None:
+            return self._pad_extent(*self.data.get_secondary_y_extent(), self.y_extent_padding)
+        return (0, 0)
+    
+    def _has_secondary_x_extent(self):
+        return self._get_secondary_x_extent() is not None
+
+    def _get_secondary_x_extent(self):
+        if not hasattr(self.data, 'get_secondary_x_extent'):
+            return None
+        if self._secondary_x_extent is not None:
+            return self._secondary_x_extent
+        if self.data is not None:
+            return self._pad_extent(*self.data.get_secondary_x_extent(), self.x_extent_padding)
+        return (0, 0)
 
     def _get_actual_xy_extents(self):
         return self._axes.get_xlim(), self._axes.get_ylim()
@@ -306,6 +454,8 @@ class MatPlotLibBase(QWidget):
             self._span_center_mouse_event = event
     
     def _handle_span_move(self, event):
+        if not self.span:
+            return
         x_min, x_max = self.span.left, self.span.right
         last_event = next(x for x in self._span_events() if x)
         diff_x = event.xdata - last_event.xdata
@@ -422,6 +572,7 @@ class MatPlotLibBase(QWidget):
         self._other_draw_events.append(draw_event)
 
     def resetZoom(self):
+        self._secondary_y_extent = self._secondary_x_extent = None
         self._xy_extents = None
         self._set_axes_limits()
         self.draw()
@@ -431,7 +582,21 @@ class MatPlotLibBase(QWidget):
         for spine in ['top', 'left']:
             axes.spines[spine].set_visible(False)
         axes.set_ylabel(ylabel)
+        axes.set_zorder(1)
         return axes
+    
+    @property
+    def axes(self):
+        return self._axes
+
+    @property
+    def secondary_axes(self):
+        if self._secondary_axes is None:
+            self._set_secondary_axes(self._twinx(''))
+        return self._secondary_axes
+    
+    def _set_secondary_axes(self, axes):
+        self._secondary_axes = axes
 
     @staticmethod
     def sizeHint():
@@ -525,3 +690,18 @@ class MatPlotLibBase(QWidget):
                 height = max(height, next_height)
             self._cached_label_width_height = width, height
         return self._cached_label_width_height
+    
+    @staticmethod
+    def _create_secondary_xy_axes(figure, divider, nx=1, ny=1, visible=False, z_order=1):
+        axes = LocatableAxes(figure, divider.get_position())
+        axes.set_axes_locator(divider.new_locator(nx=nx, ny=ny))
+        axes.xaxis.tick_top()
+        axes.xaxis.set_label_position('top')
+        axes.yaxis.tick_right()
+        axes.yaxis.set_label_position('right')
+        axes.patch.set_visible(visible)
+        axes.set_zorder(z_order)
+        figure.add_axes(axes)
+        axes.ticklabel_format(style='sci', axis='x', scilimits=(-4, 4))
+        axes.ticklabel_format(style='sci', axis='y', scilimits=(-4, 4))
+        return axes

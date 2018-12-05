@@ -4,7 +4,7 @@ from PyQt5.Qt import QWidget, Qt, QSize
 from PyQt5.QtWidgets import QVBoxLayout
 #pylint: enable=no-name-in-module
 
-from pyqttoolkit.views import IconButton
+from pyqttoolkit.views import IconButton, make_styleable
 from .tool_type import ToolType
 
 class PlotToolbarWidget(QWidget):
@@ -17,11 +17,13 @@ class PlotToolbarWidget(QWidget):
         ToolType.options: 'options.svg'
     }
 
-    def __init__(self, parent, plotview):
+    def __init__(self, parent, plotview, icon_color=None, icon_hover_color=None):
         QWidget.__init__(self, parent)
         self._plotview = plotview
         self._tools = []
         self._extra_tools = []
+        self._icon_color = icon_color
+        self._icon_hover_color = icon_hover_color
 
         self._tool_names = {
             ToolType.reset: self.tr('Reset'),
@@ -32,7 +34,7 @@ class PlotToolbarWidget(QWidget):
             ToolType.options: self.tr('Options'),
         }
 
-        self._reset = IconButton(self.tool_icons[ToolType.reset], self._tool_names[ToolType.reset], self, QSize(30, 30), 4)
+        self._reset = IconButton(self.tool_icons[ToolType.reset], self._tool_names[ToolType.reset], self, QSize(30, 30), 4, icon_color, icon_hover_color)
         self._reset.clicked.connect(self._plotview.resetZoom)
 
         for tool_type in [t for t in ToolType if plotview.toolAvailable(t)]:
@@ -54,7 +56,7 @@ class PlotToolbarWidget(QWidget):
     toolActivated = pyqtSignal(ToolType, bool)
 
     def _create_tool(self, tool_type):
-        tool = IconButton(self.tool_icons[tool_type], self._tool_names[tool_type], self, QSize(30, 30), 4)
+        tool = IconButton(self.tool_icons[tool_type], self._tool_names[tool_type], self, QSize(30, 30), 4, self._icon_color, self._icon_hover_color)
         tool.setCheckable(True)
         tool.clicked.connect(self._activate_tool(tool, tool_type))
         return tool
@@ -73,3 +75,5 @@ class PlotToolbarWidget(QWidget):
     def _update_enabled(self):
         for widget, tool_type in self._tools:
             widget.setEnabled(self._plotview.toolEnabled(tool_type))
+
+PlotToolbarWidget = make_styleable(PlotToolbarWidget)
