@@ -47,11 +47,10 @@ class PlotToolbarOptions(QWidget):
         else:
             self._options = None
         
-        self._toolbar_container.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self._toolbar_layout = QVBoxLayout(self._toolbar_container)
         self._toolbar_layout.addWidget(self._toolbar, Qt.AlignTop)
 
-        self._layout.addWidget(self._toolbar_container, 0, 1, Qt.AlignRight)
+        self._layout.addWidget(self._toolbar_container, 0, 1, Qt.AlignRight | Qt.AlignTop)
         self._layout.setColumnStretch(0, 1)
         self._layout.setColumnStretch(1, 0)
         if right_padding > 0:
@@ -72,9 +71,11 @@ class PlotToolbarOptions(QWidget):
                 self._padding_widget.setVisible(active)
             if active:
                 self._toolbar_container.setStyleSheet("ToolbarContainer {{ background-color: {} }}".format(format_color(self._background_color_qt, ColorFormat.rgba_string_256, self._background_opacity)))
+                self._layout.setAlignment(self._toolbar_container, Qt.AlignRight)
                 if self._padding_widget:
                     self._padding_widget.setStyleSheet("QWidget {{ background-color: {} }}".format(format_color(self._background_color_qt, ColorFormat.rgba_string_256, self._background_opacity)))
             else:
+                self._layout.setAlignment(self._toolbar_container, Qt.AlignRight | Qt.AlignTop)
                 self._toolbar_container.setStyleSheet("")
                 if self._padding_widget:
                     self._padding_widget.setStyleSheet("")

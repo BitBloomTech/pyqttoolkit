@@ -13,3 +13,13 @@ class ToggleableFixed(Size._Base):
 
     def get_size(self, _renderer):
         return 0.0, self._size if self._active else 0.0
+
+class MaxWidth(Size.MaxWidth):
+    def remove_artist(self, artist):
+        if artist in self._artist_list:
+            self._artist_list.remove(artist)
+    
+    def get_size(self, renderer):
+        if self._artist_list:
+            return Size.MaxWidth.get_size(self, renderer)
+        return 0, 0

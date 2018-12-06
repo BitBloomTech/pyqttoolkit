@@ -705,3 +705,17 @@ class MatPlotLibBase(QWidget):
         axes.ticklabel_format(style='sci', axis='x', scilimits=(-4, 4))
         axes.ticklabel_format(style='sci', axis='y', scilimits=(-4, 4))
         return axes
+
+    @staticmethod
+    def _create_shared_axes(figure, divider, shared_axes, nx=1, ny=1, visible=False, z_order=1):
+        axes = LocatableAxes(figure, divider.get_position(), sharex=shared_axes, sharey=shared_axes, frameon=False)
+        axes.set_axes_locator(divider.new_locator(nx=nx, ny=ny))
+        for spine in axes.spines.values():
+            spine.set_visible(False)
+        for axis in axes.axis.values():
+            axis.set_visible(False)
+        axes.patch.set_visible(False)
+        axes.set_visible(False)
+        axes.set_zorder(z_order)
+        figure.add_axes(axes)
+        return axes
