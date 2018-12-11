@@ -33,7 +33,7 @@ def configure_logging(log_level, console):
 
     logging.getLogger().setLevel(numeric_level)
 
-    rollover_bytes = 5 * 1024
+    rollover_bytes = 100 * 1024
     dir_name = get_log_dir()
     if not path.isdir(dir_name):
         makedirs(dir_name)
