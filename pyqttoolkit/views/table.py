@@ -60,7 +60,7 @@ class TableView(QTableView):
         row_header_added = False
         for i in indexes:
             if include_headers and i.column() not in columns_added:
-                columns.append(self.model().headerData(i.column(), Qt.Horizontal))
+                columns.append(self.model().headerData(i.column(), Qt.Horizontal) or '')
                 columns_added.append(i.column())
             if current_row is not None:
                 if i.row() != current_row:
@@ -69,7 +69,7 @@ class TableView(QTableView):
                 else:
                     paste_data += '\t'
             if include_headers and not row_header_added:
-                paste_data += self.model().headerData(i.row(), Qt.Vertical) + '\t'
+                paste_data += (self.model().headerData(i.row(), Qt.Vertical) or '') + '\t'
                 row_header_added = True
             data = self.model().data(i)
             paste_data += str(data) if data is not None else ''
