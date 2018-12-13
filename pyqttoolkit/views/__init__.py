@@ -28,3 +28,4 @@ from .count_selector import CountSelectorWidget
 from .list_view import ListView
 from .styleable import make_styleable
 from .popout import PopoutWidget
+from .delegates import ComboBoxItemDelegate
