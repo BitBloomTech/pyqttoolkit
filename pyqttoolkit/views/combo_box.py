@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt
 
 from pyqttoolkit.properties import AutoProperty
 from pyqttoolkit.models.roles import DataRole
+from pyqttoolkit.views.styleable import make_styleable
 
 class ComboBox(QComboBox):
     def __init__(self, parent, padding=20):
@@ -34,6 +35,8 @@ class ComboBox(QComboBox):
                 display_text = self.model().data(index, Qt.DisplayRole)
                 width = max(width, self.fontMetrics().width(display_text))
             self.view().setMinimumWidth(width + self._padding)
+
+ComboBox = make_styleable(ComboBox)
 
 class BindableComboBox(ComboBox):
     def __init__(self, parent):
@@ -62,3 +65,5 @@ class BindableComboBox(ComboBox):
         value = self.model().data(model_index, DataRole)
         value = value if value is not None else self.model().data(model_index, Qt.DisplayRole)
         return value if not isinstance(value, Enum) else value.name
+
+BindableComboBox = make_styleable(BindableComboBox)

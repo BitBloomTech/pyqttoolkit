@@ -28,6 +28,7 @@ class GroupPanelLayout(QLayout):
         self._spacing = 0
         self._label_alignment = Qt.AlignCenter
         self._panel_direction = QBoxLayout.TopToBottom
+        self._group_alignment = None
     
     def addWidget(self, widget, group_name):
         if self._item_count > 0:
@@ -39,7 +40,8 @@ class GroupPanelLayout(QLayout):
         self.addLabel(layout, group_name)
         layout.addWidget(widget)
         container.setLayout(layout)
-        self._inner.addWidget(container)
+        group_alignment = self._group_alignment if self._group_alignment is not None else Qt.Alignment(0)
+        self._inner.addWidget(container, alignment=group_alignment)
         self._item_count += 1
 
     def setLabelAlignment(self, alignment):
@@ -47,6 +49,9 @@ class GroupPanelLayout(QLayout):
 
     def setPanelDirection(self, direction):
         self._panel_direction = direction
+    
+    def setGroupAlignment(self, alignment):
+        self._group_alignment = alignment
     
     def isVertical(self):
         return self._direction in (QBoxLayout.TopToBottom, QBoxLayout.BottomToTop)
@@ -91,6 +96,9 @@ class GroupPanelLayout(QLayout):
     
     def heightForWidth(self, width):
         return self._inner.heightForWidth(width)
+    
+    def update(self):
+        return self._inner.update()
 
 class HGroupPanelLayout(GroupPanelLayout):
     def __init__(self, parent):
