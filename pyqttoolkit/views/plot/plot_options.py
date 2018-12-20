@@ -1,3 +1,5 @@
+import numpy as np
+
 #pylint: disable=no-name-in-module
 from PyQt5.Qt import QWidget, pyqtSignal, QGridLayout, QLabel
 #pylint: enable=no-name-in-module
@@ -107,6 +109,10 @@ class PlotOptionsView(QWidget):
     def _value_formatter(self, value):
         if isinstance(value, str):
             return value
+        if value == np.inf:
+            return 'inf'
+        if value == -np.inf:
+            return '-inf'
         value = int(value * 100) / 100
         return '{0:.2g}'.format(value)
     
