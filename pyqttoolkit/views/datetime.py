@@ -2,8 +2,10 @@
 Defines the DateTimeEdit class
 """
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QDateTimeEdit
+from PyQt5.Qt import QDateTimeEdit, QDateTime, pyqtSignal
 #pylint: enable=no-name-in-module
+
+from pyqttoolkit.properties import auto_property
 
 class DateTimeEdit(QDateTimeEdit):
     def __init__(self, parent):
@@ -12,6 +14,8 @@ class DateTimeEdit(QDateTimeEdit):
         self.setButtonSymbols(QDateTimeEdit.NoButtons)
         self._min_date = self._max_date = None
         self._start_date = self._end_date = None
+
+    valueChanged = pyqtSignal(QDateTime)
     
     def focusOutEvent(self, event):
         if self._start_date and self.dateTime() < self._start_date:
@@ -33,3 +37,14 @@ class DateTimeEdit(QDateTimeEdit):
     
     def setMaximumDateTime(self, max_date):
         self._max_date = max_date
+
+    @auto_property(QDateTime)
+    def value(self):
+        return self.dateTime()
+
+    @value.setter
+    def value(self, value):
+        value = value or QDateTime()
+        if self.dateTime() != value:
+            self.setDateTime(value)
+            self.valueChanged.emit(value)
