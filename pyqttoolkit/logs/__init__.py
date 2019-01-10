@@ -20,7 +20,7 @@ def get_log_dir():
 def get_log_file(log_dir):
     return path.join(log_dir, 'app.log')
 
-def configure_logging(log_level, console):
+def configure_logging(log_level, console, log_filter=None):
     logging.addLevelName(TRACE, 'TRACE')
 
     numeric_level = getattr(logging, log_level.upper(), None)
@@ -46,6 +46,8 @@ def configure_logging(log_level, console):
     )
     file_handler.doRollover()
     file_handler.setLevel(numeric_level)
+    if log_filter:
+        file_handler.addFilter(log_filter)
     file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(file_formatter)
     logging.getLogger().addHandler(file_handler)
@@ -54,6 +56,8 @@ def configure_logging(log_level, console):
         console_handler = logging.StreamHandler()
         console_handler.setLevel(numeric_level)
         console_handler.setFormatter(file_formatter)
+        if log_filter:
+            console_handler.addFilter(log_filter)
         logging.getLogger().addHandler(console_handler)
 
 def log_debug(_f):
