@@ -25,10 +25,11 @@ class _SpanSeletor(SpanSelector):
     def __init__(self, *args, **kwargs):
         SpanSelector.__init__(self, *args, **kwargs)
         self._select_none_handler = None
+        self._min_span = 1.0
 
     def _release(self, event):
         SpanSelector._release(self, event)
-        if self.rect.get_width() < 1:
+        if self.rect.get_width() < self._min_span:
             self.rect.set_visible(False)
             self.stay_rect.set_visible(False)
             if self._select_none_handler is not None:
@@ -36,6 +37,9 @@ class _SpanSeletor(SpanSelector):
     
     def set_on_select_none(self, handler):
         self._select_none_handler = handler
+    
+    def set_min_span(self, min_span):
+        self._min_span = min_span
 
 class _RectangleSelector(RectangleSelector):
     def _press(self, event):
