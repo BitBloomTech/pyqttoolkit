@@ -7,6 +7,8 @@ from PyQt5.Qt import QDateTime, QSize
 from PyQt5.QtWidgets import QGridLayout, QSizePolicy
 #pylint: enable=no-name-in-module
 
+from datetime import timedelta
+
 from pyqttoolkit.properties import auto_property, bind, unbind
 from pyqttoolkit.datetime import step_qdatetime
 from pyqttoolkit.services.link_manager import IncompatibleWidgets
@@ -83,6 +85,16 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
     
     def setInterval(self, interval):
         self._interval = interval
+
+        if interval < timedelta(seconds=1):
+            display_format = 'dd-MMM-yy hh:mm:ss.zz'
+        elif interval < timedelta(minutes=1):
+            display_format = 'dd-MMM-yy hh:mm:ss'
+        else:
+            display_format = 'dd-MMM-yy hh:mm'
+
+        for selector in self._from_selector, self._to_selector:
+            selector.setDisplayFormat(display_format)
 
     @auto_property(QDateTime)
     def dateFrom(self):

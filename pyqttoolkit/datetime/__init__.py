@@ -7,14 +7,15 @@ from PyQt5.Qt import QDateTime, QDate, QTime
 def q_datetime_to_datetime(q_datetime):
     return datetime(
         q_datetime.date().year(), q_datetime.date().month(), q_datetime.date().day(),
-        q_datetime.time().hour(), q_datetime.time().minute(), q_datetime.time().second()
+        q_datetime.time().hour(), q_datetime.time().minute(), q_datetime.time().second(),
+        q_datetime.time().msec() * 1000
     )
 
 
 def pd_timestamp_to_q_datetime(pd_timestamp):
     return QDateTime(
         QDate(pd_timestamp.year, pd_timestamp.month, pd_timestamp.day),
-        QTime(pd_timestamp.hour, pd_timestamp.minute, pd_timestamp.second)
+        QTime(pd_timestamp.hour, pd_timestamp.minute, pd_timestamp.second, pd_timestamp.microsecond / 1000)
     )
 
 def round_timedelta(delta, resolution):
@@ -30,7 +31,9 @@ def round_datetime(time, resolution):
     day = time.day - (time.day % resolution.days) if resolution.days else time.day
     hour = time.hour - (time.hour % resolution.seconds // 3600) if resolution.seconds // 3600 else time.hour
     minute = time.minute - (time.minute % ((resolution.seconds // 60) % 60)) if (resolution.seconds // 60) % 60 else time.minute
-    return datetime(year=time.year, month=time.month, day=day, hour=hour, minute=minute, second=0)
+    second = time.second - (time.second % resolution.seconds) if resolution.seconds else time.second
+    microsecond = time.microsecond - (time.microsecond % resolution.microseconds) if resolution.microseconds else time.microsecond
+    return datetime(year=time.year, month=time.month, day=day, hour=hour, minute=minute, second=second, microsecond=microsecond)
 
 def step_qdatetime(control, fraction, interval, range_start, range_end):
     date_from = q_datetime_to_datetime(control.dateFrom)
