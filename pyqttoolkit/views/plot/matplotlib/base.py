@@ -213,7 +213,7 @@ class MatPlotLibBase(QWidget):
     def closeEvent(self, event):
         QWidget.closeEvent(self, event)
         if event.isAccepted():
-            self._zoom_selector.onselect = self._span.onselect = None
+            self._zoom_selector.onselect = self._span.onselect = self._span._select_none_handler = None
 
     def set_divider_h_margin(self, h_margin):
         h = [Size.Fixed(h_margin[0]), Size.Scaled(1.0), Size.Fixed(h_margin[1])]
