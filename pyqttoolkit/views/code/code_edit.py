@@ -174,9 +174,13 @@ class CodeEdit(QWidget):
 
     def setModel(self, model):
         self._text_edit.setPlainText(model.text)
-        self._output_pane.setPlainText(model.output)
         model.textChanged.connect(self._set_text(self._text_edit))
-        model.outputChanged.connect(self._set_text(self._output_pane, True))
+        if hasattr(model, 'output'):
+            self._output_pane.setPlainText(model.output)
+            model.outputChanged.connect(self._set_text(self._output_pane, True))
+            self._output_pane.setVisible(True)
+        else:
+            self._output_pane_container.setVisible(False)
         self.editComplete.connect(self._handle_text_changed(model))
         model.validationMessageChanged.connect(self._handle_validation_message)
     
