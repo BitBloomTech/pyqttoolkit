@@ -52,7 +52,7 @@ QPushButton[class=highlight] {{
 color: #333;
 border: 1px solid #555;
 padding: 3px;
-background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #ff609a);
+background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 {color('highlight')});
 }}
 
 QPushButton:hover {{
@@ -60,7 +60,7 @@ background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, 
 }}
 
 QPushButton:hover[class=highlight] {{
-background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #ffa3c4);
+background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 {color('highlight_hover')});
 }}
 
 QPushButton:pressed {{
@@ -68,6 +68,6 @@ background: qradialgradient(cx: 0.4, cy: -0.1, fx: 0.4, fy: -0.1, radius: 1.35, 
 }}
 
 QPushButton:pressed[class=highlight] {{
-background: qradialgradient(cx: 0.4, cy: -0.1, fx: 0.4, fy: -0.1, radius: 1.35, stop: 0 #fff, stop: 1 #ff93ba);
+background: qradialgradient(cx: 0.4, cy: -0.1, fx: 0.4, fy: -0.1, radius: 1.35, stop: 0 #fff, stop: 1 {color('highlight_pressed')});
 }}
 """

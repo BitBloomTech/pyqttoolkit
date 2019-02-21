@@ -28,6 +28,9 @@ class IconButton(QPushButton):
         self._animation = QPropertyAnimation(self, b'backgroundOpacity')
         self.clicked.connect(self._update_background_opacity_stop)
     
+    def setColor(self, color=None):
+        self._icon.setColor(color)
+
     @pyqtProperty(float)
     def backgroundOpacity(self):
         return self._background_opacity

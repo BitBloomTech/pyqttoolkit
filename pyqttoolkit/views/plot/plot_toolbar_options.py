@@ -9,6 +9,7 @@ from pyqttoolkit.views.layout import HLine
 from .tool_type import ToolType
 from .toolbar import PlotToolbarWidget
 from .plot_options import PlotOptionsView
+from .legend_control import LegendControlView
 
 def _to_qt_color(color):
     return tuple(c * 255 for c in color)
@@ -19,8 +20,9 @@ class ToolbarContainer(QWidget):
 ToolbarContainer = make_styleable(ToolbarContainer)
 
 class PlotToolbarOptions(QWidget):
-    def __init__(self, parent, series_style, plot, options=None, right_padding=0.0, has_extra_tools=False):
+    def __init__(self, parent, series_style, theme_manager, plot, options=None, legend_control=None, right_padding=0.0, has_extra_tools=False):
         QWidget.__init__(self, parent)
+        self._theme_manager = theme_manager
         self._plot = plot
         self._toolbar_container = ToolbarContainer(plot)
         
@@ -40,12 +42,17 @@ class PlotToolbarOptions(QWidget):
         if options is not None:
             if isinstance(options, PlotOptionsView):
                 plot.setOptionsView(options)
-            self._options = PopoutWidget(self, options, self._background_color_qt, self._foreground_color_qt, self._background_opacity)
-            self._options.setVisible(False)
-            self._layout.addWidget(self._options, 0, 0, Qt.AlignRight)
-            self._toolbar.toolActivated.connect(self._handle_tool_activated)
+            self._options = self._add_popout(ToolType.options, options)
         else:
             self._options = None
+
+        if legend_control is not None:
+            if isinstance(legend_control, LegendControlView):
+                plot.setLegendControl(legend_control)
+            self._legend_control = self._add_popout(ToolType.legend, legend_control)
+            legend_control.hasHiddenSeriesChanged.connect(self._handle_has_hidden_series_changed)
+        else:
+            self._legend_control = None
         
         self._toolbar_layout = QVBoxLayout(self._toolbar_container)
         self._toolbar_layout.addWidget(self._toolbar, Qt.AlignTop)
@@ -63,22 +70,28 @@ class PlotToolbarOptions(QWidget):
         
         if not has_extra_tools:
             self._toolbar_layout.addStretch()
+    
+    def _handle_has_hidden_series_changed(self, has_hidden):
+        color = None if not has_hidden else self._theme_manager.get_color('highlight')
+        self._toolbar.setColor(ToolType.legend, color)
 
-    def _handle_tool_activated(self, tool, active):
-        if tool == ToolType.options:
-            self._options.setVisible(active)
-            if self._padding_widget:
-                self._padding_widget.setVisible(active)
-            if active:
-                self._toolbar_container.setStyleSheet("ToolbarContainer {{ background-color: {} }}".format(format_color(self._background_color_qt, ColorFormat.rgba_string_256, self._background_opacity)))
-                self._layout.setAlignment(self._toolbar_container, Qt.AlignRight)
+    def _handle_tool_activated(self, tool_type, view):
+        def _(tool, active):
+            if tool == tool_type:
+                view.setVisible(active)
                 if self._padding_widget:
-                    self._padding_widget.setStyleSheet("QWidget {{ background-color: {} }}".format(format_color(self._background_color_qt, ColorFormat.rgba_string_256, self._background_opacity)))
-            else:
-                self._layout.setAlignment(self._toolbar_container, Qt.AlignRight | Qt.AlignTop)
-                self._toolbar_container.setStyleSheet("")
-                if self._padding_widget:
-                    self._padding_widget.setStyleSheet("")
+                    self._padding_widget.setVisible(active)
+                if active:
+                    self._toolbar_container.setStyleSheet("ToolbarContainer {{ background-color: {} }}".format(format_color(self._background_color_qt, ColorFormat.rgba_string_256, self._background_opacity)))
+                    self._layout.setAlignment(self._toolbar_container, Qt.AlignRight)
+                    if self._padding_widget:
+                        self._padding_widget.setStyleSheet("QWidget {{ background-color: {} }}".format(format_color(self._background_color_qt, ColorFormat.rgba_string_256, self._background_opacity)))
+                else:
+                    self._layout.setAlignment(self._toolbar_container, Qt.AlignRight | Qt.AlignTop)
+                    self._toolbar_container.setStyleSheet("")
+                    if self._padding_widget:
+                        self._padding_widget.setStyleSheet("")
+        return _
 
     def addTool(self, tool_widget):
         self._toolbar_layout.addWidget(HLine(self._plot), Qt.AlignTop)
@@ -96,3 +109,10 @@ class PlotToolbarOptions(QWidget):
     @property
     def toolbar(self):
         return self._toolbar
+
+    def _add_popout(self, tool_type, view):
+        popout = PopoutWidget(self, view, self._background_color_qt, self._foreground_color_qt, self._background_opacity)
+        popout.setVisible(False)
+        self._layout.addWidget(popout, 0, 0, Qt.AlignRight)
+        self._toolbar.toolActivated.connect(self._handle_tool_activated(tool_type, popout))
+        return popout

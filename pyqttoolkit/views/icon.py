@@ -39,5 +39,11 @@ class Icon(QWidget):
         self._svgdoc.documentElement().setAttribute('fill', self._color)
         self._svgdoc.documentElement().setAttribute('fill-opacity', '1' if self.isEnabled() else '0.4')
         self._icon_widget.load(self._svgdoc.toByteArray())
+    
+    def setColor(self, color=None):
+        color = format_color(color or self._theme_manager.get_color('button_foreground'), ColorFormat.rgb_string_256) or self._color
+        self._svgdoc.documentElement().setAttribute('fill', color)
+        self._svgdoc.documentElement().setAttribute('fill-opacity', '1' if self.isEnabled() else '0.4')
+        self._icon_widget.load(self._svgdoc.toByteArray())
 
 Icon = make_styleable(Icon)

@@ -8,12 +8,13 @@ from PyQt5.Qt import QVBoxLayout, QWidget, QSize, QTimer, QMenu, QAction, QAppli
 #pylint: enable=no-name-in-module
 
 import matplotlib
+from matplotlib.legend import DraggableLegend
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from mpl_toolkits.axes_grid1 import Size, LocatableAxes, Divider
 
-from pyqttoolkit.properties import AutoProperty, connect_all
+from pyqttoolkit.properties import AutoProperty, connect_all, bind
 from pyqttoolkit.models import SpanModel
 from pyqttoolkit.views import TableView
 from pyqttoolkit.colors import interpolate_rgb
@@ -137,11 +138,14 @@ class MatPlotLibBase(QWidget):
         
         self._options_view = None
         self._secondary_axes = self._secondary_y_extent = self._secondary_x_extent = None
+        self._legend = None
 
     enabledToolsChanged = pyqtSignal()
     spanChanged = pyqtSignal(SpanModel)
+    hasHiddenSeriesChanged = pyqtSignal(bool)
 
     span = AutoProperty(SpanModel)
+    hasHiddenSeries = AutoProperty(bool)
 
     def setOptionsView(self, options_view):
         self._options_view = options_view
@@ -164,6 +168,64 @@ class MatPlotLibBase(QWidget):
             self._options_view.secondaryYAxisUpperLimitChanged
         )
     
+    def setLegendControl(self, legend_control):
+        self._legend_control = legend_control
+        self._legend_control.seriesUpdated.connect(self._legend_series_updated)
+        self._legend_control.showLegendChanged.connect(self._show_legend)
+        self._legend_control.seriesNameChanged.connect(self._handle_series_name_changed)
+        self._legend_control.showSeriesChanged.connect(self._handle_show_series_changed)
+        bind(self._legend_control, self, 'hasHiddenSeries', two_way=False)
+
+    def _legend_series_updated(self):
+        if self._legend is not None:
+            self._legend.remove()
+            self._show_legend(self._legend_control.showLegend)
+
+    def _show_legend(self, show):
+        if self._legend and not show:
+            self._legend.remove()
+            self._legend = None
+            self.draw()
+        else:
+            show_series = self._legend_control.showSeries
+            handles = [h for h, s in zip(self._legend_control.seriesHandles, show_series) if s]
+            names = [n for n, s in zip(self._legend_control.seriesNames, show_series) if s]
+            self._legend = self._axes.legend(handles, names, markerscale=self._get_legend_markerscale())
+            DraggableLegend(self._legend)
+            self.draw()
+        
+    def _get_legend_markerscale(self):
+        return 5
+    
+    def _handle_series_name_changed(self, index, series_name):
+        if self._legend is not None and index < len(self._legend_control.seriesHandles):
+            visible_handles = [h for h, s in zip(self._legend_control.seriesHandles, self._legend_control.showSeries) if s]
+            try:
+                legend_index = visible_handles.index(self._legend_control.seriesHandles[index])
+            except ValueError:
+                return
+            if legend_index < len(self._legend.texts):
+                self._legend.texts[legend_index].set_text(series_name)
+                self.draw()
+    
+    def _handle_show_series_changed(self, index, show_series):
+        if index < len(self._legend_control.seriesHandles):
+            self._set_series_visibility(self._legend_control.seriesHandles[index], show_series)
+        if self._legend is not None:
+            self._legend.remove()
+            self._show_legend(self._legend_control.showLegend)
+        else:
+            self.draw()
+
+    def _set_series_visibility(self, handle, visible):
+        if not handle:
+            return
+        if hasattr(handle, 'set_visible'):
+            handle.set_visible(visible)
+        elif hasattr(handle, 'get_children'):
+            for child in handle.get_children():
+                self._set_series_visibility(child, visible)
+
     def _update_grid_lines(self):
         show_grid_lines = False if self._options_view is None else self._options_view.showGridLines
         gridline_color = self._axes.spines['bottom'].get_edgecolor()

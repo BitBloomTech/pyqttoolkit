@@ -7,3 +7,4 @@ class ToolType(Enum):
     pan = 3
     reset = 4
     options = 5
+    legend = 6

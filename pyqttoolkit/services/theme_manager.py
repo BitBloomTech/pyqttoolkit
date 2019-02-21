@@ -2,6 +2,10 @@ class ThemeManager:
     default_theme = {
         'button_foreground': (0, 0, 0),
         'button_background_hover': (255, 255, 255),
+        'highlight': (255, 96, 154),
+        'highlight_hover': (255, 163, 196),
+        'highlight_pressed': (255, 147, 186),
+        'highlight': (255, 96, 154),
         'module_background': (200, 200, 200),
         'module_text': (0, 0, 0)
     }

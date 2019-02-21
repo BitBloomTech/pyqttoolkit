@@ -14,7 +14,8 @@ class PlotToolbarWidget(QWidget):
         ToolType.polygon: 'polygon.svg',
         ToolType.pan: 'pan.svg',
         ToolType.span: 'width.svg',
-        ToolType.options: 'options.svg'
+        ToolType.options: 'options.svg',
+        ToolType.legend: 'legend.svg'
     }
 
     def __init__(self, parent, plotview, icon_color=None, icon_hover_color=None):
@@ -32,6 +33,7 @@ class PlotToolbarWidget(QWidget):
             ToolType.pan: self.tr('Pan'),
             ToolType.span: self.tr('Span'),
             ToolType.options: self.tr('Options'),
+            ToolType.legend: self.tr('Legend')
         }
 
         self._reset = IconButton(self.tool_icons[ToolType.reset], self._tool_names[ToolType.reset], self, QSize(30, 30), 4, icon_color, icon_hover_color)
@@ -75,5 +77,10 @@ class PlotToolbarWidget(QWidget):
     def _update_enabled(self):
         for widget, tool_type in self._tools:
             widget.setEnabled(self._plotview.toolEnabled(tool_type))
+    
+    def setColor(self, tool_type, color=None):
+        for widget, widget_tool_type in self._tools:
+            if tool_type == widget_tool_type:
+                widget.setColor(color or self._icon_color)
 
 PlotToolbarWidget = make_styleable(PlotToolbarWidget)
