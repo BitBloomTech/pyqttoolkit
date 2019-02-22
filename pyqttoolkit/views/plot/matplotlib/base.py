@@ -139,6 +139,9 @@ class MatPlotLibBase(QWidget):
         self._options_view = None
         self._secondary_axes = self._secondary_y_extent = self._secondary_x_extent = None
         self._legend = None
+        self._draggable_legend = None
+
+        self.hasHiddenSeries = False
 
     enabledToolsChanged = pyqtSignal()
     spanChanged = pyqtSignal(SpanModel)
@@ -178,7 +181,6 @@ class MatPlotLibBase(QWidget):
 
     def _legend_series_updated(self):
         if self._legend is not None:
-            self._legend.remove()
             self._show_legend(self._legend_control.showLegend)
 
     def _show_legend(self, show):
@@ -186,16 +188,34 @@ class MatPlotLibBase(QWidget):
             self._legend.remove()
             self._legend = None
             self.draw()
-        else:
+        elif show:
+            if self._legend:
+                self._legend.remove()
             show_series = self._legend_control.showSeries
             handles = [h for h, s in zip(self._legend_control.seriesHandles, show_series) if s]
             names = [n for n, s in zip(self._legend_control.seriesNames, show_series) if s]
-            self._legend = self._axes.legend(handles, names, markerscale=self._get_legend_markerscale())
-            DraggableLegend(self._legend)
+            axes = (
+                self._secondary_axes
+                if self._secondary_axes
+                and self._secondary_axes.get_visible()
+                and self._secondary_axes.get_zorder() > self._axes.get_zorder()
+                else self._axes
+            )
+            self._legend = self._create_legend(axes, handles, names, markerscale=self._get_legend_markerscale())
+            if self._get_legend_text_color() is not None:
+                for text in self._legend.texts:
+                    text.set_color(self._get_legend_text_color())
+            self._draggable_legend = DraggableLegend(self._legend)
             self.draw()
         
     def _get_legend_markerscale(self):
         return 5
+    
+    def _create_legend(self, axes, handles, names, **kwargs):
+        return axes.legend(handles, names, **kwargs)
+    
+    def _get_legend_text_color(self):
+        return None
     
     def _handle_series_name_changed(self, index, series_name):
         if self._legend is not None and index < len(self._legend_control.seriesHandles):
@@ -212,7 +232,6 @@ class MatPlotLibBase(QWidget):
         if index < len(self._legend_control.seriesHandles):
             self._set_series_visibility(self._legend_control.seriesHandles[index], show_series)
         if self._legend is not None:
-            self._legend.remove()
             self._show_legend(self._legend_control.showLegend)
         else:
             self.draw()
