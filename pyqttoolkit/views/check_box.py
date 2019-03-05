@@ -3,6 +3,7 @@ from PyQt5.Qt import QCheckBox, pyqtSignal
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import AutoProperty
+from pyqttoolkit.views.styleable import make_styleable
 
 class BindableCheckBox(QCheckBox):
     def __init__(self, label, parent):
@@ -16,3 +17,5 @@ class BindableCheckBox(QCheckBox):
 
     def _handle_clicked(self):
         self.checked = self.isChecked()
+
+BindableCheckBox = make_styleable(BindableCheckBox)

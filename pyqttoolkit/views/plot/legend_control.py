@@ -1,9 +1,10 @@
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QWidget, pyqtSignal, QGridLayout, QLabel
+from PyQt5.Qt import QWidget, pyqtSignal, QGridLayout, QLabel, QColor, QPalette
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import AutoProperty, bind
 from pyqttoolkit.views import BindableCheckBox, BindableLineEdit
+from pyqttoolkit.colors import format_color, ColorFormat
 
 class LegendControlView(QWidget):
     def __init__(self, parent):
@@ -33,7 +34,7 @@ class LegendControlView(QWidget):
     showLegend = AutoProperty(bool)
     hasHiddenSeries = AutoProperty(bool)
 
-    def setSeries(self, series, handles):
+    def setSeries(self, series, handles, colors):
         if self._series == series and self._handles == handles:
             return
 
@@ -49,6 +50,7 @@ class LegendControlView(QWidget):
 
         for i, default_name in enumerate(series):
             show_series = BindableCheckBox(None, self)
+            show_series.setStyleSheet(self._check_box_style_sheet(colors[i]))
             show_series.checked = True
             show_series.checkedChanged.connect(self._on_show_series_changed(i))
             series_name = BindableLineEdit(self)
@@ -60,6 +62,18 @@ class LegendControlView(QWidget):
             self._layout.addWidget(series_name, i + 1, 1)
         
         self.seriesUpdated.emit()
+    
+    def _check_box_style_sheet(self, color):
+        color = color or (255, 255, 255)
+        return """BindableCheckBox::indicator:checked
+            {{
+                background-color: {color}
+            }}
+            BindableCheckBox::indicator:unchecked
+            {{
+                border: 3px solid {color}
+            }}
+        """.format(color=format_color(color, ColorFormat.hexa_string, 1.0))
 
     @property
     def seriesNames(self):

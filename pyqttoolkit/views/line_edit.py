@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QLineEdit
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import AutoProperty
+from pyqttoolkit.views.styleable import make_styleable
 
 class LineEdit(QLineEdit):
     def __init__(self, parent):
@@ -42,3 +43,5 @@ class BindableLineEdit(LineEdit):
     
     def _handle_value_changed(self, value):
         self.setText(value)
+
+BindableLineEdit = make_styleable(BindableLineEdit)

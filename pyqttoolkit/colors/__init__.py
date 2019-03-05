@@ -28,6 +28,8 @@ def expand_rgb(colors, n):
 class ColorFormat(Enum):
     rgba_string_256 = 0
     rgb_string_256 = 1
+    hex_string = 2
+    hexa_string = 3
 
 def format_color(color, color_format=ColorFormat.rgba_string_256, opacity=None, lighten=None):
     if len(color) == 4:
@@ -46,6 +48,10 @@ def format_color(color, color_format=ColorFormat.rgba_string_256, opacity=None, 
         return f'rgba({r},{g},{b},{a})'
     if color_format == ColorFormat.rgb_string_256:
         return f'rgb({r},{g},{b})'
+    if color_format == ColorFormat.hex_string:
+        return '#{:02x}{:02x}{:02x}'.format(*(int(c * 255) for c in (r, g, b)))
+    if color_format == ColorFormat.hexa_string:
+        return '#{:02x}{:02x}{:02x}{:02x}'.format(*(int(c * 255) for c in (a, r, g, b)))
     
     raise ValueError(f'Invalid format: {color_format}')
 
