@@ -23,8 +23,8 @@ class ThemeManager:
 
     @staticmethod
     def get(widget):
-        while widget and not hasattr(widget, 'themeManager'):
+        while widget is not None and not hasattr(widget, 'themeManager'):
             widget = widget.parent()
-        if widget and hasattr(widget, 'themeManager'):
+        if widget is not None and hasattr(widget, 'themeManager'):
             return widget.themeManager
         return None
