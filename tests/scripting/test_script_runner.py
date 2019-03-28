@@ -48,8 +48,3 @@ def test_cannot_import_relative_module():
 def test_can_import_from_pandas():
     script = 'from pandas import isna'
     ScriptRunner().run(script, ScriptContext())
-
-def test_cannot_write_file():
-    script = "open('c:\\file', 'w')"
-    with pytest.raises(ValueError):
-        ScriptRunner().run(script, ScriptContext())
