@@ -20,7 +20,7 @@ install_requires = [
 tests_require = [
     'tox',
     'pytest',
-    'pyqtest-cov',
+    'pytest-cov',
     'pytest-asyncio',
     'pytest-qt',
     'licensify'
