@@ -21,6 +21,7 @@ tests_require = [
     'tox',
     'pytest',
     'pytest-cov',
+    'pytest-xvfb',
     'pytest-asyncio',
     'pytest-qt',
     'licensify'
