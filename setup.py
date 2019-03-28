@@ -1,34 +1,50 @@
 from setuptools import setup, find_packages
 from os import path
-import re
 
-here = path.abspath(path.dirname(__file__))
+import versioneer
 
-def find_version():
-    with open(path.join(here, 'pyqttoolkit', '__init__.py')) as fp:
-        version_file = fp.read()
-    version_match = re.search(r"__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
-    if version_match:
-        return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
+PACKAGE_NAME = 'pyqttoolkit'
+
+_here = path.abspath(path.dirname(__file__))
+
+with open(path.join(_here, 'README.md')) as fp:
+    README_CONTENTS = fp.read()
+
+install_requires = [
+    'pyqt5==5.9.2',
+    'matplotlib==2.2.*',
+    'jinja2',
+    'pandas',
+    'fonttools==3.32.0'
+]
+tests_require = [
+    'tox',
+    'pytest',
+    'pytest-asyncio',
+    'pytest-qt',
+    'licensify'
+]
+
+extras_require = {
+    'test': tests_require,
+    'publish': ['twine']
+}
 
 setup(
-    name='pyqttoolkit',
-    version=find_version(),
-    packages=find_packages(),
-    install_requires=[
-        'pyqt5==5.9.2',
-        'matplotlib',
-        'jinja2',
-        'pandas',
-        'fonttools==3.32.0'
-    ],
-    extras_require={
-        'dev': [
-            'tox',
-            'pytest',
-            'pytest-asyncio',
-            'pytest-qt'
-        ]
-    }
+    name=PACKAGE_NAME,
+    install_requires=install_requires,
+    tests_require=tests_require,
+    extras_require=extras_require,
+    packages=find_packages(exclude=('tests*',)),
+    cmdclass=versioneer.get_cmdclass(),
+    license='GPLv3',
+    version=versioneer.get_version(),
+    author='Simmovation Ltd',
+    author_email='info@simmovation.tech',
+    url='https://github.com/Simmovation/pyqttoolkit',
+    platforms='any',
+    description='A toolkit for PyQt 5',
+    long_description=README_CONTENTS,
+    long_description_content_type='text/markdown',
+    python_requires='==3.6.*',
 )
