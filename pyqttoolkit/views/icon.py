@@ -32,15 +32,9 @@ class Icon(QWidget):
         self._color = format_color(color or self._theme_manager.get_color('button_foreground'), ColorFormat.rgb_string_256)
 
         self._svgdoc = QDomDocument()
-        file = QFile(f'icons:{icon}')
-        file.open(QFile.ReadOnly)
-        self._svgdoc.setContent(file.readAll())
-        file.close()
-
-        self._svgdoc.documentElement().setAttribute('fill', self._color)
-
         self._icon_widget = QSvgWidget(self)
-        self._icon_widget.load(self._svgdoc.toByteArray())
+
+        self.loadIcon(icon)
 
         if size:
             self._icon_widget.setFixedSize(QSize(size.width() - 2 * padding, size.height() - 2 * padding))
@@ -48,6 +42,14 @@ class Icon(QWidget):
         self._layout = QHBoxLayout(self)
         self._layout.setContentsMargins(padding, padding, padding, padding)
         self._layout.addWidget(self._icon_widget, Qt.AlignCenter)
+    
+    def loadIcon(self, icon):
+        file = QFile(f'icons:{icon}')
+        file.open(QFile.ReadOnly)
+        self._svgdoc.setContent(file.readAll())
+        self._svgdoc.documentElement().setAttribute('fill', self._color)
+        file.close()
+        self._icon_widget.load(self._svgdoc.toByteArray())
 
     def setEnabled(self, enabled):
         QWidget.setEnabled(self, enabled)
