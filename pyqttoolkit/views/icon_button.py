@@ -45,6 +45,9 @@ class IconButton(QPushButton):
     
     def setColor(self, color=None):
         self._icon.setColor(color)
+    
+    def setIcon(self, icon):
+        self._icon.loadIcon(icon)
 
     @pyqtProperty(float)
     def backgroundOpacity(self):
