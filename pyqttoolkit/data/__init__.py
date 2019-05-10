@@ -14,10 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-def calculate_interval(values):
+def calculate_interval(values, sort=True):
     interval = None
     last_value = None
-    for value in sorted(values):
+    if sort:
+        values = sorted(values)
+    for value in values:
         if last_value is not None:
             next_interval = value - last_value
             if next_interval == interval:
