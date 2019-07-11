@@ -89,7 +89,7 @@ def logf(level, log_args=True):
             else:
                 logger.log(level, f'Entering')
             result = f(*args, **kwargs)
-            logger.debug('Exiting')
+            logger.log(level, 'Exiting')
             return result
         return _
     return logf_decorator
