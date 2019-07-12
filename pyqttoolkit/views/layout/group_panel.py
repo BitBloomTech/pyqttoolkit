@@ -30,6 +30,9 @@ class LinkWidget(QWidget):
     def mouseDoubleClickEvent(self, _event):
         if hasattr(self._linkable_widget, 'linkRequested'):
             self._linkable_widget.linkRequested()
+    
+    def contextMenuEvent(self, event):
+        return self._linkable_widget.contextMenuEvent(event)
 
 class GroupPanelLayout(QLayout):
     def __init__(self, parent, direction):

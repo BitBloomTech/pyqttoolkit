@@ -19,7 +19,7 @@ Defines the DatetimeRangeSelectorWidget
 """
 #pylint: disable=no-name-in-module
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.Qt import QDateTime, QSize
+from PyQt5.Qt import QDateTime, QSize, QMenu, QAction
 from PyQt5.QtWidgets import QGridLayout, QSizePolicy
 #pylint: enable=no-name-in-module
 
@@ -36,7 +36,7 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
     """class::DatetimeRangeSelectorWidget
     Widget to select a datetime range
     """
-    def __init__(self, parent, paging=False, link_manager=None):
+    def __init__(self, parent, paging=False, link_manager=None, reset_enabled=True):
         LinkableWidget.__init__(self, parent, link_manager)
         self._date_range_start = self._date_range_end = None
         self._interval = None
@@ -64,9 +64,22 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
         self._from_selector.dateTimeChanged.connect(self._date_from_changed)
         self._to_selector.dateTimeChanged.connect(self._date_to_changed)
 
+        self._menu = QMenu(self)
+        self._reset = QAction(self.tr('Reset'), self)
+        self._reset.triggered.connect(self._handle_reset)
+        self._menu.addAction(self._reset)
+        self._reset_enabled = reset_enabled
+
     dateFromChanged = pyqtSignal(QDateTime)
     dateToChanged = pyqtSignal(QDateTime)
     datesChanged = pyqtSignal(QDateTime, QDateTime)
+
+    def contextMenuEvent(self, event):
+        if self._reset_enabled:
+            self._menu.exec_(event.globalPos())
+        
+    def _handle_reset(self):
+        self.setDates(self._date_range_start, self._date_range_end)
 
     def link(self, other):
         if not isinstance(other, DatetimeRangeSelectorWidget):

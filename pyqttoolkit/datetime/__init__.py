@@ -56,7 +56,7 @@ def step_qdatetime(control, fraction, interval, range_start, range_end):
     date_to = q_datetime_to_datetime(control.dateTo)
     range_start = q_datetime_to_datetime(range_start)
     range_end = q_datetime_to_datetime(range_end)
-    delta = round_timedelta(((date_to - date_from) + interval) * fraction, interval)
+    delta = round_timedelta((date_to - date_from) * fraction, interval)
     date_from = max(date_from + delta, range_start)
     date_to = min(date_to + delta, range_end)
     if date_to - date_from > timedelta(0):
