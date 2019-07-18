@@ -124,6 +124,7 @@ class TaskRunner(QObject):
         self._current_error_description = None
         self._current_show_progress = None
         self._current_on_completed = None
+        self._current_on_cancelled = None
         self._queue_semaphore = QSemaphore(1)
         self._queued_tasks = []
 
@@ -137,6 +138,7 @@ class TaskRunner(QObject):
         if self._queue_semaphore.tryAcquire():
             self._run_task_no_queue(task_function, task_args, on_completed, on_cancelled, on_error, description, error_description, long_running, show_progress, background)
         else:
+            LOGGER.info('Queueing task %s...', description)
             task = QueuedTask(self, 
                 task_function=task_function, 
                 task_args=task_args, 
@@ -160,6 +162,7 @@ class TaskRunner(QObject):
         self._current_error_description = error_description
         self._current_show_progress = show_progress
         self._current_on_completed = on_completed
+        self._current_on_cancelled = on_cancelled
 
         kwargs = {}
 
@@ -212,6 +215,8 @@ class TaskRunner(QObject):
         try:
             self.busy.cancelComplete.emit()
             self.taskCancelled.emit()
+            if self._current_on_cancelled is not None:
+                self._current_on_cancelled()
         finally:
             self.resetTask()
 
@@ -247,11 +252,12 @@ class TaskRunner(QObject):
         self._cancel_worker = None
     
     def resetTask(self):
-        self._queue_semaphore.release()
         self._current_on_error = None
         self._current_error_description = None
         self._current_show_progress = None
         self._current_on_completed = None
+        self._current_on_cancelled = None
+        self._queue_semaphore.release()
 
     busyChanged = pyqtSignal(BusyArgs)
     error = pyqtSignal(str)
