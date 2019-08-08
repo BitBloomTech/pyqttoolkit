@@ -19,20 +19,7 @@ from PyQt5.Qt import QLayout, QBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePol
 #pylint: enable=no-name-in-module
 
 from .lines import HLine, VLine
-
-class LinkWidget(QWidget):
-    def __init__(self, parent, linkable_widget):
-        QWidget.__init__(self, parent)
-        self._linkable_widget = linkable_widget
-        if hasattr(self._linkable_widget, 'setLinkDisplay'):
-            self._linkable_widget.setLinkDisplay(self)
-    
-    def mouseDoubleClickEvent(self, _event):
-        if hasattr(self._linkable_widget, 'linkRequested'):
-            self._linkable_widget.linkRequested()
-    
-    def contextMenuEvent(self, event):
-        return self._linkable_widget.contextMenuEvent(event)
+from .link import LinkWidget
 
 class GroupPanelLayout(QLayout):
     def __init__(self, parent, direction):
