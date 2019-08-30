@@ -11,7 +11,7 @@ with open(path.join(_here, 'README.md')) as fp:
     README_CONTENTS = fp.read()
 
 install_requires = [
-    'pyqt5==5.9.2',
+    'pyqt5==5.13.0',
     'matplotlib==2.2.*',
     'jinja2',
     'pandas',
