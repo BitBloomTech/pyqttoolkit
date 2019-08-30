@@ -55,14 +55,14 @@ jobs:
             - .coverage
           key: v1-dependencies-{{ checksum "setup.py" }}
 
-      - run:
-          name: Generate reports
-          command: |
-            . .venv/bin/activate
-            coverage report
-            mkdir test-reports
-            mkdir test-reports/coverage
-            coverage html -d test-reports/coverage
+      # - run:
+      #     name: Generate reports
+      #     command: |
+      #       . .venv/bin/activate
+      #       coverage report
+      #       mkdir test-reports
+      #       mkdir test-reports/coverage
+      #       coverage html -d test-reports/coverage
 
       - store_artifacts:
           path: test-reports
