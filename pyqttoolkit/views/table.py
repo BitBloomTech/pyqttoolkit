@@ -18,8 +18,10 @@
 Defines the SynthesisView class
 """
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QTableView, QKeySequence, QApplication, QMenu, QAction, Qt
+from PyQt5.Qt import QTableView, QKeySequence, QApplication, QMenu, QAction, Qt, QModelIndex, QSortFilterProxyModel
 #pylint: enable=no-name-in-module
+
+from pyqttoolkit.models.roles import RowSpanRole, ColumnSpanRole
 
 class TableView(QTableView):
     def __init__(self, parent):
@@ -60,7 +62,9 @@ class TableView(QTableView):
         QTableView.setModel(self, model)
         if model:
             model.setParent(self)
-    
+            model.dataChanged.connect(self._handle_data_changed)
+            self._update_cell_spans()
+
     def copy(self):
         self._do_copy()
     
@@ -121,3 +125,21 @@ class TableView(QTableView):
 
     def contextMenuEvent(self, event):
         self._menu.exec_(event.globalPos())
+
+    def _handle_data_changed(self, start_index, end_index):
+        self._update_cell_spans(start_index, end_index)
+
+    def _update_cell_spans(self, start_index=QModelIndex(), end_index=QModelIndex()):
+        if isinstance(self.model(), QSortFilterProxyModel):
+            return
+        start_index = start_index if start_index.isValid() else self.model().createIndex(0, 0)
+        end_index = end_index if end_index.isValid() else self.model().createIndex(self.model().rowCount(), self.model().columnCount())
+        for row in range(start_index.row(), end_index.row()):
+            for column in range(start_index.column(), end_index.column()):
+                current_index = self.model().createIndex(row, column)
+                row_span = self.model().data(current_index, RowSpanRole)
+                col_span = self.model().data(current_index, ColumnSpanRole)
+                if (isinstance(row_span, int) and row_span != self.rowSpan(row, column)) or (isinstance(col_span, int) and col_span != self.columnSpan(row, column)):
+                    row_span = row_span if isinstance(row_span, int) else 1
+                    col_span = col_span if isinstance(col_span, int) else 1
+                    self.setSpan(row, column, row_span, col_span)

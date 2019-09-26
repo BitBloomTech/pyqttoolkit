@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from PyQt5.QtCore import pyqtSignal, QItemSelectionModel
-from PyQt5.Qt import QWidget, QGridLayout, QAbstractItemModel, QStringListModel
+from PyQt5.Qt import QWidget, QGridLayout, QAbstractItemModel, QStringListModel, Qt
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import auto_property
@@ -36,6 +36,7 @@ class BulkValueSelectorWidget(QWidget):
 
     valuesChanged = pyqtSignal(QAbstractItemModel)
     selectedValuesChanged = pyqtSignal(list)
+    dataCommitted = pyqtSignal(list)
 
     @auto_property(QAbstractItemModel)
     def values(self):
@@ -96,3 +97,7 @@ class BulkValueSelectorWidget(QWidget):
 
     def _handle_values_changed(self):
         self.selectedValuesChanged.emit(self.selectedValues)
+
+    def keyPressEvent(self, event):
+        if event.key() in [Qt.Key_Enter, Qt.Key_Return]:
+            self.dataCommitted.emit(self.selectedValues)

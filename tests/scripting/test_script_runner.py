@@ -48,3 +48,14 @@ def test_cannot_import_relative_module():
 def test_can_import_from_pandas():
     script = 'from pandas import isna'
     ScriptRunner().run(script, ScriptContext())
+
+def test_can_run_recursive_function():
+    script = """def fact(a):
+    if a <= 1:
+        return 1
+    print(globals())
+    return a * fact(a - 1)
+
+fact(3)
+"""
+    ScriptRunner().run(script, ScriptContext())

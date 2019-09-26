@@ -17,15 +17,15 @@
 from enum import Enum
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QItemDelegate
+from PyQt5.Qt import QItemDelegate, QTableView, QTreeView, QStringListModel
 #pylint: enable=no-name-in-module
 
-from pyqttoolkit.models.roles import DataRole
-from pyqttoolkit.views import BindableComboBox
+from pyqttoolkit.models.roles import DataRole, EditorAuxDataRole
+from pyqttoolkit.views import BindableComboBox, DateTimeEdit, BulkValueSelectorWidget, Popup
 
 class ComboBoxItemDelegate(QItemDelegate):
     def __init__(self, parent):
-        QItemDelegate.__init__(self, parent)
+        super().__init__(parent)
     
     def setComboBoxModel(self, model):
         self._combo_box_model = model
@@ -34,6 +34,9 @@ class ComboBoxItemDelegate(QItemDelegate):
         combo_box = BindableComboBox(parent)
         combo_box.setModel(self._combo_box_model)
         value = self.parent().model().data(index, DataRole)
+        if isinstance(self.parent(), QTableView):
+            combo_box.setFixedWidth(self.parent().columnWidth(index.column()) * self.parent().columnSpan(index.row(), index.column()))
+            combo_box.setFixedHeight(self.parent().rowHeight(index.row()) * self.parent().rowSpan(index.row(), index.column()))
         if isinstance(value, Enum):
             value = value.name
         combo_box.value = value
@@ -47,4 +50,36 @@ class ComboBoxItemDelegate(QItemDelegate):
         def _handler():
             self.parent().commitData(control)
             self.parent().closeEditor(control, QItemDelegate.NoHint)
+        return _handler
+
+class DateTimeItemDelegate(QItemDelegate):
+    def __init__(self, parent):
+        super().__init__(parent)
+    
+    def createEditor(self, parent, option, index):
+        editor = DateTimeEdit(parent)
+        editor.setDate(self.parent().model().data(index, DataRole))
+        return editor
+
+class BulkValueSelectorItemDelegate(QItemDelegate):
+    def __init__(self, parent):
+        super().__init__(parent)
+    
+    def createEditor(self, parent, option, index):
+        editor = BulkValueSelectorWidget(parent)
+        editor.values = QStringListModel(self.parent().model().data(index, EditorAuxDataRole), self)
+        editor.selectedValues = self.parent().model().data(index, DataRole)
+        popup = Popup(parent, editor)
+        editor.dataCommitted.connect(self.closePopup(popup))
+        return popup
+    
+    def setEditorData(self, editor, index):
+        editor.popupAtPosition(self.parent(), self.parent().visualRect(index))
+    
+    def setModelData(self, editor, model, index):
+        model.setData(index, sorted(editor.contents.selectedValues))
+
+    def closePopup(self, popup):
+        def _handler(selected_values):
+            self.parent().closeEditor(popup, QItemDelegate.NoHint)
         return _handler

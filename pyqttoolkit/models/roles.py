@@ -16,3 +16,8 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 DataRole = 0x0100
 UserDataRole = 0x0101
+ValidationRole = 0x0102
+ItemTypeRole = 0x0103
+EditorAuxDataRole = 0x0104
+RowSpanRole = 0x0110
+ColumnSpanRole = 0x0111
