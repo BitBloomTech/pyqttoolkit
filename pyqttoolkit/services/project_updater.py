@@ -21,7 +21,7 @@ import inspect
 from threading import Lock
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QObject, pyqtSignal
+from PyQt5.Qt import QObject, pyqtSignal, QTimer
 #pylint: enable=no-name-in-module
 
 def _check_attribute(name, fields, project):
@@ -93,10 +93,13 @@ class ProjectUpdater(QObject):
                 result = update_function(proxy)
             for name, value in proxy.updates.items():
                 setattr(self._project_manager.project, name, value)
-                self.projectUpdated.emit(name)
+                self._on_project_updated(name)
             for prop in set(updated_properties or []) - set(proxy.updates.keys()):
-                self.projectUpdated.emit(prop)
+                self._on_project_updated(prop)
             if not proxy.updates and updated_properties is None:
-                self.projectUpdated.emit(None)
+                self._on_project_updated(None)
         if on_completed:
-            on_completed(result)
+            QTimer.singleShot(0, lambda: on_completed(result))
+    
+    def _on_project_updated(self, prop):
+        QTimer.singleShot(0, lambda: self.projectUpdated.emit(prop))

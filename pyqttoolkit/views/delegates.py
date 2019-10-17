@@ -67,6 +67,8 @@ class BulkValueSelectorItemDelegate(QItemDelegate):
     
     def createEditor(self, parent, option, index):
         editor = BulkValueSelectorWidget(parent)
+        editor.setFixedHeight(int(self.parent().height() * 0.8))
+        editor.setFixedWidth(200)
         editor.values = QStringListModel(self.parent().model().data(index, EditorAuxDataRole), self)
         editor.selectedValues = self.parent().model().data(index, DataRole)
         popup = Popup(parent, editor)
