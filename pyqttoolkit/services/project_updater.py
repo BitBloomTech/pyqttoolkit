@@ -21,7 +21,7 @@ import inspect
 from threading import Lock
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QObject, pyqtSignal, QTimer
+from PyQt5.Qt import QObject, pyqtSignal, QTimer, QCoreApplication, QEvent
 #pylint: enable=no-name-in-module
 
 def _check_attribute(name, fields, project):
@@ -57,6 +57,24 @@ class ProjectProxy:
         _check_attribute(name, ProjectProxy._storage[self]['_fields'], ProjectProxy._storage[self]['_project'])
         return getattr(ProjectProxy._storage[self]['_project'], name)
 
+
+class PropertyUpdatedEvent(QEvent):
+    def __init__(self, prop):
+        super().__init__(QEvent.User)
+        self._prop = prop
+    
+    @property
+    def prop(self):
+        return self._prop
+
+class UpdateCompleteEvent(QEvent):
+    def __init__(self, handler, result):
+        super().__init__(QEvent.User)
+        self._handler = handler
+        self._result = result
+    
+    def exec(self):
+        self._handler(self._result)
 
 class ProjectUpdater(QObject):
     """class::ProjectUpdater
@@ -99,7 +117,16 @@ class ProjectUpdater(QObject):
             if not proxy.updates and updated_properties is None:
                 self._on_project_updated(None)
         if on_completed:
-            QTimer.singleShot(0, lambda: on_completed(result))
+            QCoreApplication.postEvent(self, UpdateCompleteEvent(on_completed, result))
     
     def _on_project_updated(self, prop):
-        QTimer.singleShot(0, lambda: self.projectUpdated.emit(prop))
+        QCoreApplication.postEvent(self, PropertyUpdatedEvent(prop))
+    
+    def event(self, event):
+        if isinstance(event, PropertyUpdatedEvent):
+            self.projectUpdated.emit(event.prop)
+            return True
+        if isinstance(event, UpdateCompleteEvent):
+            event.exec()
+            return True
+        return super().event(event)

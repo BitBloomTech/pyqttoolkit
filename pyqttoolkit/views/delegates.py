@@ -17,26 +17,30 @@
 from enum import Enum
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QItemDelegate, QTableView, QTreeView, QStringListModel
+from PyQt5.Qt import QStyledItemDelegate, QTableView, QTreeView, QStringListModel, QStyle, QStyleOptionViewItem
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.models.roles import DataRole, EditorAuxDataRole
-from pyqttoolkit.views import BindableComboBox, DateTimeEdit, BulkValueSelectorWidget, Popup
+from pyqttoolkit.views import BindableComboBox, DateTimeEdit, BulkValueSelectorWidget, Popup, make_styleable
 
-class ComboBoxItemDelegate(QItemDelegate):
+class ComboBoxItemDelegate(QStyledItemDelegate):
     def __init__(self, parent):
         super().__init__(parent)
     
     def setComboBoxModel(self, model):
         self._combo_box_model = model
-    
+
     def createEditor(self, parent, option, index):
         combo_box = BindableComboBox(parent)
         combo_box.setModel(self._combo_box_model)
+        combo_box.move(parent.pos())
         value = self.parent().model().data(index, DataRole)
         if isinstance(self.parent(), QTableView):
             combo_box.setFixedWidth(self.parent().columnWidth(index.column()) * self.parent().columnSpan(index.row(), index.column()))
             combo_box.setFixedHeight(self.parent().rowHeight(index.row()) * self.parent().rowSpan(index.row(), index.column()))
+        else:
+            combo_box.setFixedWidth(self.parent().columnWidth(index.column()))
+            combo_box.setFixedHeight(self.parent().rowHeight(index))
         if isinstance(value, Enum):
             value = value.name
         combo_box.value = value
@@ -49,10 +53,10 @@ class ComboBoxItemDelegate(QItemDelegate):
     def closeEditor(self, control):
         def _handler():
             self.parent().commitData(control)
-            self.parent().closeEditor(control, QItemDelegate.NoHint)
+            self.parent().closeEditor(control, QStyledItemDelegate.NoHint)
         return _handler
 
-class DateTimeItemDelegate(QItemDelegate):
+class DateTimeItemDelegate(QStyledItemDelegate):
     def __init__(self, parent):
         super().__init__(parent)
     
@@ -61,7 +65,7 @@ class DateTimeItemDelegate(QItemDelegate):
         editor.setDate(self.parent().model().data(index, DataRole))
         return editor
 
-class BulkValueSelectorItemDelegate(QItemDelegate):
+class BulkValueSelectorItemDelegate(QStyledItemDelegate):
     def __init__(self, parent):
         super().__init__(parent)
     
@@ -83,5 +87,5 @@ class BulkValueSelectorItemDelegate(QItemDelegate):
 
     def closePopup(self, popup):
         def _handler(selected_values):
-            self.parent().closeEditor(popup, QItemDelegate.NoHint)
+            self.parent().closeEditor(popup, QStyledItemDelegate.NoHint)
         return _handler
