@@ -116,11 +116,11 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
         self._interval = interval
 
         if interval < timedelta(seconds=1):
-            display_format = 'dd-MMM-yy hh:mm:ss.zz'
+            display_format = 'dd-MMM-yyyy hh:mm:ss.zz'
         elif interval < timedelta(minutes=1):
-            display_format = 'dd-MMM-yy hh:mm:ss'
+            display_format = 'dd-MMM-yyyy hh:mm:ss'
         else:
-            display_format = 'dd-MMM-yy hh:mm'
+            display_format = 'dd-MMM-yyyy hh:mm'
 
         for selector in self._from_selector, self._to_selector:
             selector.setDisplayFormat(display_format)
