@@ -14,7 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from .cache import Cache
-from .interval import calculate_interval
-from .bits import get_next_available_bit
-from .names import get_next_available_name
+def calculate_interval(values, sort=True):
+    interval = None
+    last_value = None
+    if sort:
+        values = sorted(values)
+    for value in values:
+        if last_value is not None:
+            next_interval = value - last_value
+            if next_interval == interval:
+                return interval
+            interval = next_interval
+        last_value = value
+    return interval

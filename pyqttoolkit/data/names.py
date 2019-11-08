@@ -14,7 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from .cache import Cache
-from .interval import calculate_interval
-from .bits import get_next_available_bit
-from .names import get_next_available_name
+
+def get_next_available_name(name_basis, names):
+    i = 1
+    while True:
+        next_name = f'{name_basis} {i}' if i > 1 else name_basis
+        if next_name not in names:
+            return next_name
+        i += 1
