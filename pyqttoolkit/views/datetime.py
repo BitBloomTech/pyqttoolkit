@@ -26,7 +26,7 @@ from pyqttoolkit.properties import auto_property
 class DateTimeEdit(QDateTimeEdit):
     def __init__(self, parent):
         QDateTimeEdit.__init__(self, parent)
-        self.setDisplayFormat('dd-MMM-yy hh:mm')
+        self.setDisplayFormat('dd-MMM-yyyy hh:mm')
         self.setButtonSymbols(QDateTimeEdit.NoButtons)
         self._min_date = self._max_date = None
         self._start_date = self._end_date = None
