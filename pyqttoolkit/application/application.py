@@ -57,7 +57,7 @@ class Application(QApplication):
             return QApplication.notify(self, receiver, event)
         #pylint: disable=broad-except
         except Exception as e:
-            self.handle_exception(type(e), e, e.__traceback__)
+            self._handle_exception(type(e), e, e.__traceback__)
             return True
     
     def _handle_exception(self, ex_type, ex_value, traceback_obj):
