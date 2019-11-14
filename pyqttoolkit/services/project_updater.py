@@ -21,7 +21,7 @@ import inspect
 from threading import Lock
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QObject, pyqtSignal, QTimer, QCoreApplication, QEvent
+from PyQt5.Qt import QObject, pyqtSignal, QTimer, QCoreApplication, QEvent, QSemaphore, QThread
 #pylint: enable=no-name-in-module
 
 def _check_attribute(name, fields, project):
@@ -76,6 +76,25 @@ class UpdateCompleteEvent(QEvent):
     def exec(self):
         self._handler(self._result)
 
+class UpdateEvent(QEvent):
+    def __init__(self, updater):
+        super().__init__(QEvent.User)
+        self._updater = updater
+        self._result = None
+        self._semaphore = QSemaphore(1)
+        if QCoreApplication.instance().thread() != QThread.currentThread():
+            self._semaphore.acquire()
+    
+    def exec(self):
+        try:
+            self._result = self._updater(None)
+        finally:
+            self._semaphore.release()
+    
+    def result(self):
+        self._semaphore.acquire()
+        return self._result
+
 class ProjectUpdater(QObject):
     """class::ProjectUpdater
     Allows the project to be updated
@@ -105,17 +124,18 @@ class ProjectUpdater(QObject):
         Calls the update_function to perform the desired updates
         """
         self.dirty = True
-        result = None
-        with ProjectProxy(self._project_manager.project) as proxy:
-            with self.update_lock:
-                result = update_function(proxy)
-            for name, value in proxy.updates.items():
-                setattr(self._project_manager.project, name, value)
-                self._on_project_updated(name)
-            for prop in set(updated_properties or []) - set(proxy.updates.keys()):
+        # Ensure events are processed (message boxes displayed etc.) before hogging the thread
+        QCoreApplication.processEvents()
+        update_event = UpdateEvent(update_function)
+        QCoreApplication.postEvent(self, update_event)
+        # Process the event we just posted...
+        QCoreApplication.processEvents()
+        result = update_event.result()
+        if updated_properties:
+            for prop in updated_properties:
                 self._on_project_updated(prop)
-            if not proxy.updates and updated_properties is None:
-                self._on_project_updated(None)
+        else:
+            self._on_project_updated(None)
         if on_completed:
             QCoreApplication.postEvent(self, UpdateCompleteEvent(on_completed, result))
     
@@ -128,5 +148,9 @@ class ProjectUpdater(QObject):
             return True
         if isinstance(event, UpdateCompleteEvent):
             event.exec()
+            return True
+        if isinstance(event, UpdateEvent):
+            with self.update_lock:
+                event.exec()
             return True
         return super().event(event)
