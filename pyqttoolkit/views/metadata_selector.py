@@ -42,6 +42,7 @@ class MetadataSelectorDropDown(QWidget):
 
     def setModel(self, model):
         self._drop_down.setModel(model)
+        model.dataChanged.connect(self._handle_selected_id_changed)
 
     def _update_current(self, index):
         model_index = self._drop_down.model().createIndex(index, 0)
