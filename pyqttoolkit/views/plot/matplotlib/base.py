@@ -37,6 +37,14 @@ from pyqttoolkit.colors import interpolate_rgb
 from ..tool_type import ToolType
 from .font import MatPlotLibFont
 
+def _to_finite(value):
+    return value if np.isfinite(value) else 0
+
+def _safe_limits(lower, upper):
+    lower = _to_finite(lower)
+    upper = _to_finite(upper)
+    return min(lower, upper), max(lower, upper)
+
 class _SpanSeletor(SpanSelector):
     def __init__(self, *args, **kwargs):
         SpanSelector.__init__(self, *args, **kwargs)
@@ -407,8 +415,8 @@ class MatPlotLibBase(QWidget):
             if self._options_view.y_limits:
                 self._options_view.yAxisLowerLimit = float(y_min)
                 self._options_view.yAxisUpperLimit = float(y_max)
-        self._axes.set_xlim(x_min, x_max)
-        self._axes.set_ylim(y_min, y_max)
+        self._axes.set_xlim(*_safe_limits(x_min, x_max))
+        self._axes.set_ylim(*_safe_limits(y_min, y_max))
     
     def _set_secondary_axes_limits(self):
         if self._options_view is not None:
@@ -425,9 +433,9 @@ class MatPlotLibBase(QWidget):
                 self._options_view.secondaryXAxisLowerLimit = float(secondary_x_min)
                 self._options_view.secondaryXAxisUpperLimit = float(secondary_x_max)
         if self._has_secondary_y_extent():
-            self._secondary_axes.set_ylim(*self._get_secondary_y_extent())
+            self._secondary_axes.set_ylim(*_safe_limits(*self._get_secondary_y_extent()))
         if self._has_secondary_x_extent():
-            self._secondary_axes.set_xlim(*self._get_secondary_x_extent())
+            self._secondary_axes.set_xlim(*_safe_limits(*self._get_secondary_x_extent()))
     
     def _secondary_y_enabled(self):
         return True if self._secondary_axes and self._secondary_axes.get_visible() and self._has_secondary_y_extent() else False
