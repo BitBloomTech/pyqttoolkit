@@ -15,12 +15,16 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from datetime import datetime, timedelta
+from dateutil.parser import parse as parse_datetime
 
 #pylint: disable=no-name-in-module
 from PyQt5.Qt import QDateTime, QDate, QTime
 #pylint: enable=no-name-in-module
 
-def q_datetime_to_datetime(q_datetime):
+def q_datetime_to_datetime(q_datetime: QDateTime):
+    if q_datetime is None or not q_datetime.isValid():
+        return None
+
     return datetime(
         q_datetime.date().year(), q_datetime.date().month(), q_datetime.date().day(),
         q_datetime.time().hour(), q_datetime.time().minute(), q_datetime.time().second(),
@@ -28,11 +32,18 @@ def q_datetime_to_datetime(q_datetime):
     )
 
 
-def pd_timestamp_to_q_datetime(pd_timestamp):
+def pd_timestamp_to_q_datetime(pd_timestamp: datetime):
+    if pd_timestamp is None:
+        return QDateTime()
     return QDateTime(
         QDate(pd_timestamp.year, pd_timestamp.month, pd_timestamp.day),
         QTime(pd_timestamp.hour, pd_timestamp.minute, pd_timestamp.second, pd_timestamp.microsecond / 1000)
     )
+
+def isoformat_to_datetime(isoformat: str):
+    if isoformat is None:
+        return None
+    return parse_datetime(isoformat)
 
 def round_timedelta(delta, resolution):
     if resolution is None:

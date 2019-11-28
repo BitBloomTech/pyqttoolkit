@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QFrame, QPoint, Qt, QGridLayout
+from PyQt5.Qt import QFrame, QPoint, Qt, QGridLayout, QRect
 #pylint: enable=no-name-in-module
 
 class Popup(QFrame):
@@ -27,8 +27,11 @@ class Popup(QFrame):
     
     def popupAtPosition(self, parent, rect):
         self.show()
-        new_pos = parent.mapToGlobal(rect.bottomRight() - QPoint(self.width(), 0))
-        new_pos = QPoint(max(0, new_pos.x()), new_pos.y())
+        if isinstance(rect, QRect):
+            new_pos = parent.mapToGlobal(rect.bottomRight() - QPoint(self.width(), 0))
+            new_pos = QPoint(max(0, new_pos.x()), new_pos.y())
+        elif isinstance(rect, QPoint):
+            new_pos = parent.mapToGlobal(rect)
         self.move(new_pos)
 
     @property

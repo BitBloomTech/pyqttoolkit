@@ -17,21 +17,37 @@
 """:mod:`datetime`
 Defines the DateTimeEdit class
 """
+from enum import Enum
+
 #pylint: disable=no-name-in-module
 from PyQt5.Qt import QDateTimeEdit, QDateTime, pyqtSignal
 #pylint: enable=no-name-in-module
 
-from pyqttoolkit.properties import auto_property
+from pyqttoolkit.properties import auto_property, AutoProperty
+
+from .styleable import make_styleable
 
 class DateTimeEdit(QDateTimeEdit):
-    def __init__(self, parent):
+    class Limit(Enum):
+        min = 0
+        max = 1
+
+    def __init__(self, parent, default=Limit.min, calendar_popup=True):
         QDateTimeEdit.__init__(self, parent)
         self.setDisplayFormat('dd-MMM-yyyy hh:mm')
         self.setButtonSymbols(QDateTimeEdit.NoButtons)
         self._min_date = self._max_date = None
         self._start_date = self._end_date = None
+        self.isLimit = False
+        self._default = default
+        self.isLimitChanged.connect(self._handle_is_limit_changed)
+        self.dateTimeChanged.connect(self._handle_date_time_changed)
+        self.setCalendarPopup(calendar_popup)
 
     valueChanged = pyqtSignal(QDateTime)
+    isLimitChanged = pyqtSignal(bool)
+
+    isLimit = AutoProperty(bool)
     
     def focusOutEvent(self, event):
         if self._start_date and self.dateTime() < self._start_date:
@@ -53,14 +69,35 @@ class DateTimeEdit(QDateTimeEdit):
     
     def setMaximumDateTime(self, max_date):
         self._max_date = max_date
-
+    
     @auto_property(QDateTime)
     def value(self):
-        return self.dateTime()
+        return QDateTime() if self.isLimit else self.dateTime()
 
     @value.setter
     def value(self, value):
         value = value or QDateTime()
-        if self.dateTime() != value:
-            self.setDateTime(value)
-            self.valueChanged.emit(value)
+        if not value.isValid():
+            date_time = self._start_date if self._default == self.Limit.min else self._end_date
+            is_limit = True
+        else:
+            date_time = value
+            is_limit = False
+        if self.dateTime() != date_time:
+            self.setDateTime(date_time)
+        self.isLimit = is_limit
+        self.valueChanged.emit(value)
+
+    def reset(self):
+        self.value = QDateTime()
+    
+    def _handle_is_limit_changed(self, is_limit):
+        stylesheet = 'DateTimeEdit {font: italic}' if is_limit else ''
+        self.setStyleSheet(stylesheet)
+    
+    def _handle_date_time_changed(self, value):
+        if value is not None or (isinstance(value, QDateTime) and value.isValid()):
+            self.isLimit = False
+
+
+DateTimeEdit = make_styleable(DateTimeEdit)

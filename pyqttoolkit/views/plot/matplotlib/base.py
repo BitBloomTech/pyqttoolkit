@@ -16,6 +16,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from io import BytesIO
 import numpy as np
+from datetime import datetime
 
 #pylint: disable=no-name-in-module
 from PyQt5.QtCore import pyqtSignal
@@ -38,7 +39,7 @@ from ..tool_type import ToolType
 from .font import MatPlotLibFont
 
 def _to_finite(value):
-    return value if np.isfinite(value) else 0
+    return value if isinstance(value, datetime) or np.isfinite(value) else 0
 
 def _safe_limits(lower, upper):
     lower = _to_finite(lower)

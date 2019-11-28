@@ -17,7 +17,7 @@
 from enum import Enum
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QStyledItemDelegate, QTableView, QTreeView, QStringListModel, QStyle, QStyleOptionViewItem
+from PyQt5.Qt import QStyledItemDelegate, QTableView, QTreeView, QStringListModel, QStyle, QStyleOptionViewItem, QWidget, QHBoxLayout, QPushButton, QPoint, Qt, QDateTime
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.models.roles import DataRole, EditorAuxDataRole
@@ -59,11 +59,38 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
 class DateTimeItemDelegate(QStyledItemDelegate):
     def __init__(self, parent):
         super().__init__(parent)
+        self._popup = None
     
     def createEditor(self, parent, option, index):
-        editor = DateTimeEdit(parent)
-        editor.setDate(self.parent().model().data(index, DataRole))
+        date_range, default = self.parent().model().data(index, EditorAuxDataRole)
+        editor = DateTimeEdit(parent, default)
+        editor.setDateTimeRange(*date_range)
+        value = self.parent().model().data(index, DataRole)
+        editor.value = QDateTime(value) if value is not None else None
+        if default is not None:
+            reset_button_text = self.tr('Set to Start') if default == DateTimeEdit.Limit.min else self.tr('Set to End')
+            start_end_buttons = QWidget(parent)
+            start_end_buttons_layout = QHBoxLayout(start_end_buttons)
+            start_end_buttons_layout.setContentsMargins(0, 0, 0, 0)
+            button = QPushButton(reset_button_text, start_end_buttons)
+            button.clicked.connect(editor.reset)
+            start_end_buttons_layout.addWidget(button)
+            self._popup = Popup(editor, start_end_buttons)
+
         return editor
+    
+    def setEditorData(self, editor, index):
+        if self._popup is not None:
+            cell_rect = editor.rect()
+            self._popup.popupAtPosition(editor, cell_rect.bottomLeft())
+        return super().setEditorData(editor, index)
+    
+    def setModelData(self, editor, model, index):
+        if self._popup is not None:
+            self._popup.close()
+            self._popup = None
+        model.setData(index, editor.value, Qt.EditRole)
+
 
 class BulkValueSelectorItemDelegate(QStyledItemDelegate):
     def __init__(self, parent):
