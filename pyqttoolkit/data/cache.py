@@ -46,10 +46,12 @@ class Cache:
                 return
     
     def delete_group(self, group):
+        to_remove = []
         for k, v in self._storage:
             if k.startswith(group):
-                self._storage.remove((k, v))
-                return
+                to_remove.append((k, v))
+        for v in to_remove:
+            self._storage.remove(v)
             
     def setdefault(self, key, default_factory):
         if key in self:
