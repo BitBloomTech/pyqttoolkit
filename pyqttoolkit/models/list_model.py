@@ -31,7 +31,7 @@ class ListModel(QAbstractListModel):
     def data(self, index, role=Qt.DisplayRole):
         if role in [Qt.DisplayRole, DataRole]:
             item = self._items[index.row()]
-            return self._display_name_map.get(item, item.name) if role == Qt.DisplayRole else item
+            return (self._display_name_map.get(item) or item.name) if role == Qt.DisplayRole else item
         return None
     
     @property

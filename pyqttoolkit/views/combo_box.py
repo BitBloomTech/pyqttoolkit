@@ -54,48 +54,51 @@ class ComboBox(QComboBox):
 
 ComboBox = make_styleable(ComboBox)
 
-class BindableComboBox(ComboBox):
-    def __init__(self, parent):
-        ComboBox.__init__(self, parent)
+def typed_bindable_combo_box(type_):
+    class TypedBindableComboBox(ComboBox):
+        def __init__(self, parent):
+            ComboBox.__init__(self, parent)
 
-        self.currentIndexChanged.connect(self._handle_index_changed)
-        self.valueChanged.connect(self._update_index)
+            self.currentIndexChanged.connect(self._handle_index_changed)
+            self.valueChanged.connect(self._update_index)
+        
+        valueChanged = pyqtSignal(type_)
+
+        value = AutoProperty(type_)
+
+        def setModel(self, value):
+            super().setModel(value)
+            if hasattr(value, 'dataChanged'):
+                value.dataChanged.connect(self._handle_data_changed)
+        
+        def _handle_data_changed(self):
+            self._update_index(self.value)
+            self._handle_index_changed(self.currentIndex())
+
+        def _handle_index_changed(self, index):
+            if 0 <= index < self.model().rowCount():
+                model_index = self.model().createIndex(index, 0)
+                self.value = self._get_data_value(model_index)
+
+        def _update_index(self, value):
+            index = self._get_index(value)
+            index = index if index is not None else 0
+            if 0 <= index < self.model().rowCount():
+                self.setCurrentIndex(index)
+
+        
+        def _get_index(self, value):
+            for i in range(self.model().rowCount()):
+                model_index = self.model().createIndex(i, 0)
+                if self._get_data_value(model_index) == value:
+                    return i
+            return None
+
+        def _get_data_value(self, model_index):
+            value = self.model().data(model_index, DataRole)
+            value = value if value is not None else self.model().data(model_index, Qt.DisplayRole)
+            return value if not isinstance(value, Enum) else value.name
     
-    valueChanged = pyqtSignal(str)
+    return make_styleable(TypedBindableComboBox)
 
-    value = AutoProperty(str)
-
-    def setModel(self, value):
-        super().setModel(value)
-        if hasattr(value, 'dataChanged'):
-            value.dataChanged.connect(self._handle_data_changed)
-    
-    def _handle_data_changed(self):
-        self._update_index(self.value)
-        self._handle_index_changed(self.currentIndex())
-
-    def _handle_index_changed(self, index):
-        if 0 <= index < self.model().rowCount():
-            model_index = self.model().createIndex(index, 0)
-            self.value = self._get_data_value(model_index)
-
-    def _update_index(self, value):
-        index = self._get_index(value)
-        index = index if index is not None else 0
-        if 0 <= index < self.model().rowCount():
-            self.setCurrentIndex(index)
-
-    
-    def _get_index(self, value):
-        for i in range(self.model().rowCount()):
-            model_index = self.model().createIndex(i, 0)
-            if self._get_data_value(model_index) == value:
-                return i
-        return None
-
-    def _get_data_value(self, model_index):
-        value = self.model().data(model_index, DataRole)
-        value = value if value is not None else self.model().data(model_index, Qt.DisplayRole)
-        return value if not isinstance(value, Enum) else value.name
-
-BindableComboBox = make_styleable(BindableComboBox)
+BindableComboBox = typed_bindable_combo_box(str)
