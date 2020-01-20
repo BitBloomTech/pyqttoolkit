@@ -60,7 +60,7 @@ def round_datetime(time, resolution):
     minute = time.minute - (time.minute % ((resolution.seconds // 60) % 60)) if (resolution.seconds // 60) % 60 else time.minute
     second = time.second - (time.second % resolution.seconds) if resolution.seconds else time.second
     microsecond = time.microsecond - (time.microsecond % resolution.microseconds) if resolution.microseconds else time.microsecond
-    return datetime(year=time.year, month=time.month, day=day, hour=hour, minute=minute, second=second, microsecond=microsecond)
+    return datetime(year=time.year, month=time.month, day=day, hour=hour, minute=minute, second=second, microsecond=microsecond, tzinfo=time.tzinfo)
 
 def step_qdatetime(control, fraction, interval, range_start, range_end):
     date_from = q_datetime_to_datetime(control.dateFrom)
