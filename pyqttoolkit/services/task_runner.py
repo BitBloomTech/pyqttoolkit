@@ -22,7 +22,7 @@ import inspect
 
 #pylint: disable=no-name-in-module
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-from PyQt5.Qt import QThreadPool, QRunnable, QThread, QSemaphore
+from PyQt5.Qt import QThreadPool, QRunnable, QThread, QSemaphore, QEvent, QCoreApplication
 #pylint: enable=no-name-in-module
 
 from ..properties import AutoProperty
@@ -36,16 +36,26 @@ class BusyArgs(QObject):
         self._long_running = long_running
         self._indeterminate = indeterminate
         self._cancellable = cancellable
-        self.description = description
+        self._description = description
+        self._progress = 0
     
     cancelled = pyqtSignal()
     cancelComplete = pyqtSignal()
-    descriptionChanged = pyqtSignal(str)
-    progressChanged = pyqtSignal(float)
+    progressChanged = pyqtSignal(float, str)
 
-    description = AutoProperty(str)
-    progress = AutoProperty(float)
-    
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def progress(self):
+        return self._progress
+
+    def updateProgress(self, progress, description):
+        self._progress = max(99, float(progress))
+        self._description = description
+        self.progressChanged.emit(progress, description)
+
     @property
     def busy(self):
         return self._busy
@@ -110,6 +120,24 @@ class QueuedTask(QThread):
         self._task_runner._queue_semaphore.acquire()
         self._task_runner._run_task_no_queue(**self._kwargs)
         self.complete.emit()
+
+class ProgressUpdatedEvent(QEvent):
+    def __init__(self, progress, message):
+        super().__init__(QEvent.User)
+        self._progress = progress
+        self._message = message
+    
+    @property
+    def progress(self):
+        return self._progress
+    
+    @property
+    def message(self):
+        return self._message
+
+class ResetEvent(QEvent):
+    def __init__(self):
+        super().__init__(QEvent.User)
 
 class TaskRunner(QObject):
     """class::TaskRunner
@@ -198,8 +226,20 @@ class TaskRunner(QObject):
         self._current_worker.wait()
 
     def update_progress(self, percent, message):
-        self.busy.progress = float(percent)
-        self.busy.description = message
+        QCoreApplication.postEvent(self, ProgressUpdatedEvent(float(percent), message))
+    
+    def event(self, event):
+        if isinstance(event, ProgressUpdatedEvent):
+            if self._current_worker is not None:
+                self.busy.updateProgress(float(event.progress), event.message)
+            return True
+        if isinstance(event, ResetEvent):
+            self.busy = BusyArgs(False, description=None)
+            LOGGER.info('Resetting task...')
+            self._current_worker = None
+            self._cancel_lock = None
+            self._cancel_worker = None
+        return super().event(event)
     
     def cancel(self):
         if self._cancel_lock is not None:
@@ -245,11 +285,7 @@ class TaskRunner(QObject):
             self.resetTask()
     
     def resetWorker(self):
-        self.busy = BusyArgs(False, description=None)
-        LOGGER.info('Resetting task...')
-        self._current_worker = None
-        self._cancel_lock = None
-        self._cancel_worker = None
+        QCoreApplication.postEvent(self, ResetEvent())
     
     def resetTask(self):
         self._current_on_error = None
