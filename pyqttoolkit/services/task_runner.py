@@ -243,7 +243,7 @@ class TaskRunner(QObject):
     
     def cancel(self):
         if self._cancel_lock is not None:
-            self.busy.description = self.tr('Cancelling...')
+            self.busy.updateProgress(self.busy.progress, self.tr('Cancelling...'))
             self._cancel_worker = CancelWorker(self._current_worker, self._cancel_lock)
             self._cancel_worker.complete.connect(self._cancel_complete)
             self._cancel_worker.start()
