@@ -135,9 +135,27 @@ class ProgressUpdatedEvent(QEvent):
     def message(self):
         return self._message
 
-class ResetEvent(QEvent):
+class CancelEvent(QEvent):
     def __init__(self):
         super().__init__(QEvent.User)
+
+class ResultEvent(QEvent):
+    def __init__(self, result):
+        super().__init__(QEvent.User)
+        self._result = result
+    
+    @property
+    def result(self):
+        return self._result
+
+class ErrorEvent(QEvent):
+    def __init__(self, exception):
+        super().__init__(QEvent.User)
+        self._exception = exception
+    
+    @property
+    def exception(self):
+        return self._exception
 
 class TaskRunner(QObject):
     """class::TaskRunner
@@ -233,12 +251,37 @@ class TaskRunner(QObject):
             if self._current_worker is not None:
                 self.busy.updateProgress(float(event.progress), event.message)
             return True
-        if isinstance(event, ResetEvent):
-            self.busy = BusyArgs(False, description=None)
-            LOGGER.info('Resetting task...')
-            self._current_worker = None
-            self._cancel_lock = None
-            self._cancel_worker = None
+        elif isinstance(event, ResultEvent):
+            self.resetWorker()
+            try:
+                if self._current_on_completed is not None:
+                    self._current_on_completed(event.result)
+                self.taskCompleted.emit()
+            finally:
+                self.resetTask()
+        elif isinstance(event, CancelEvent):
+            self.resetWorker()
+            try:
+                self.busy.cancelComplete.emit()
+                self.taskCancelled.emit()
+                if self._current_on_cancelled is not None:
+                    self._current_on_cancelled()
+            finally:
+                self.resetTask()
+        elif isinstance(event, ErrorEvent):
+            self.resetWorker()
+            try:
+                LOGGER.info('Error running task: %s', event.exception)
+                if self._current_error_description is not None and self._current_on_error is not None:
+                    self.error.emit(self._current_error_description)
+                    self.taskErrored.emit()
+                elif self._current_on_error is not None:
+                    self._current_on_error(event.exception)
+                    self.taskErrored.emit()
+                else:
+                    raise exception
+            finally:
+                self.resetTask()
         return super().event(event)
     
     def cancel(self):
@@ -251,41 +294,20 @@ class TaskRunner(QObject):
             raise RuntimeError('Cannot cancel task, no cancel lock found')
 
     def _cancel_complete(self):
-        self.resetWorker()
-        try:
-            self.busy.cancelComplete.emit()
-            self.taskCancelled.emit()
-            if self._current_on_cancelled is not None:
-                self._current_on_cancelled()
-        finally:
-            self.resetTask()
+        QCoreApplication.postEvent(self, CancelEvent())
 
     def _on_error(self, exception):
-        self.resetWorker()
-        try:
-            LOGGER.info('Error running task: %s', exception)
-            if self._current_error_description is not None and self._current_on_error is not None:
-                self.error.emit(self._current_error_description)
-                self.taskErrored.emit()
-            elif self._current_on_error is not None:
-                self._current_on_error(exception)
-                self.taskErrored.emit()
-            else:
-                raise exception
-        finally:
-            self.resetTask()
+        QCoreApplication.postEvent(self, ErrorEvent(exception))
 
     def _on_result(self, result):
-        self.resetWorker()
-        try:
-            if self._current_on_completed is not None:
-                self._current_on_completed(result)
-            self.taskCompleted.emit()
-        finally:
-            self.resetTask()
+        QCoreApplication.postEvent(self, ResultEvent(result))
     
     def resetWorker(self):
-        QCoreApplication.postEvent(self, ResetEvent())
+        self.busy = BusyArgs(False, description=None)
+        LOGGER.info('Resetting task...')
+        self._current_worker = None
+        self._cancel_lock = None
+        self._cancel_worker = None
     
     def resetTask(self):
         self._current_on_error = None
