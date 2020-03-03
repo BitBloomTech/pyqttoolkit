@@ -34,12 +34,15 @@ class DependencyContainer:
     def get_instance(self, name):
         return self._instances[name]
 
-    def resolve(self, type_, extras=None):
+    def resolve(self, type_, extras=None, none_for_missing=False):
         args = self._get_args(type_)
         all_dependencies = {**self._instances, **(extras or {})}
         for a in args:
-            if not a in all_dependencies.keys():
-                raise MissingDependency(type_, a)
+            if a not in all_dependencies.keys():
+                if none_for_missing:
+                    all_dependencies[a] = None
+                else:
+                    raise MissingDependency(type_, a)
         return type_(**{a: all_dependencies[a] for a in args})
     
     def resolve_for(self, type_for, base_type, extras=None):
