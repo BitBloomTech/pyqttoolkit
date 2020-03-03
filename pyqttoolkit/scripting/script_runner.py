@@ -31,15 +31,17 @@ def add_paths(paths):
             sys.path.remove(path)
 
 class ContextWriter:
-    def __init__(self, context):
+    def __init__(self, context, skip_empty_output_lines=False):
         self._context = context
+        self._skip_empty_output_lines = skip_empty_output_lines
     
     def write(self, value):
-        self._context.add_output(value)
+        if (value is not None and value.strip()) or not self._skip_empty_output_lines:
+            self._context.add_output(value)
 
 @contextmanager
-def redirect_output(context):
-    writer = ContextWriter(context)
+def redirect_output(context, skip_empty_output_lines=False):
+    writer = ContextWriter(context, skip_empty_output_lines)
     _stdout = sys.stdout
     sys.stdout = writer
     try:
@@ -52,7 +54,7 @@ class ScriptStopped(Exception):
         Exception.__init__(self)
 
 class ScriptRunner:    
-    def __init__(self, additional_paths=None):
+    def __init__(self, additional_paths=None, skip_empty_output_lines=False):
         self._disallowed_modules = [
             r'sift', r'\binspect\b', r'\bimp\b', r'\bsys\b', r'\b\.', r'\bbuiltins\b'
         ]
@@ -61,13 +63,14 @@ class ScriptRunner:
         ]
         self._additional_paths = additional_paths or []
         self._context = None
+        self._skip_empty_output_lines = skip_empty_output_lines
 
     def run(self, script, context):
         script = re.sub(r'(?<!\w)result(?!\w)', 'result[\'value\']', script)
         code = self.compile(script)
         try:
             self._context = context
-            with redirect_output(self._context):
+            with redirect_output(self._context, self._skip_empty_output_lines):
                 #pylint: disable=exec-used
                 exec(code, self._globals(context), context.locals)
                 #pylint: enable=exec-used
