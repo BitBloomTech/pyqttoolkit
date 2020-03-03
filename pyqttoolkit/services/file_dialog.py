@@ -21,8 +21,9 @@ from PyQt5.Qt import QStandardPaths, QFileDialog
 #pylint: enable=no-name-in-module
 
 class FileDialogService:
-    def __init__(self, project_manager):
+    def __init__(self, project_manager, application_configuration):
         self._project_manager = project_manager
+        self._application_configuration = application_configuration
     
     def get_save_filename(self, parent, filter_, default_name=None):
         dialog = QFileDialog(parent, directory=self._get_default_directory(), filter=filter_)
@@ -45,6 +46,9 @@ class FileDialogService:
     
     def _get_default_directory(self):
         if not self._project_manager.filename:
+            default_location = self._application_configuration.get_value('application.default_directory')
+            if default_location and path.isdir(default_location):
+                return default_location
             return QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
         else:
             return path.dirname(self._project_manager.filename)
