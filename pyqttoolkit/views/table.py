@@ -61,7 +61,8 @@ class TableView(QTableView):
     def setModel(self, model):
         QTableView.setModel(self, model)
         if model:
-            model.setParent(self)
+            if model.parent() is None:
+                model.setParent(self)
             model.dataChanged.connect(self._handle_data_changed)
             self._update_cell_spans()
 
