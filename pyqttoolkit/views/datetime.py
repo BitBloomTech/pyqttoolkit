@@ -77,7 +77,7 @@ class DateTimeEdit(QDateTimeEdit):
     @value.setter
     def value(self, value):
         value = value or QDateTime()
-        if not value.isValid():
+        if not value.isValid() and self._start_date is not None and self._end_date is not None:
             date_time = self._start_date if self._default == self.Limit.min else self._end_date
             is_limit = True
         else:

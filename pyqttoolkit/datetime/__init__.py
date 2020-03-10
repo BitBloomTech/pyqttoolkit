@@ -17,6 +17,8 @@
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_datetime
 
+import pandas as pd
+
 #pylint: disable=no-name-in-module
 from PyQt5.Qt import QDateTime, QDate, QTime
 #pylint: enable=no-name-in-module
@@ -33,7 +35,7 @@ def q_datetime_to_datetime(q_datetime: QDateTime):
 
 
 def pd_timestamp_to_q_datetime(pd_timestamp: datetime):
-    if pd_timestamp is None:
+    if pd_timestamp is None or pd.isna(pd_timestamp):
         return QDateTime()
     return QDateTime(
         QDate(pd_timestamp.year, pd_timestamp.month, pd_timestamp.day),
