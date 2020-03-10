@@ -279,7 +279,7 @@ class TaskRunner(QObject):
                     self._current_on_error(event.exception)
                     self.taskErrored.emit()
                 else:
-                    raise exception
+                    raise event.exception
             finally:
                 self.resetTask()
         return super().event(event)
