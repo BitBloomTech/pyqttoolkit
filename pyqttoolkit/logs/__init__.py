@@ -29,14 +29,28 @@ class CustomLogLevel(Enum):
 
 TRACE = CustomLogLevel.TRACE.value
 
+LOG_DIR = None
+LOG_FILE = None
+
 def get_log_dir():
-    app_data = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
-    return path.join(app_data, 'logs')
+    global LOG_DIR
+    if LOG_DIR is None:
+        LOG_DIR = path.join(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation), 'logs')
+    return LOG_DIR
 
 def get_log_file(log_dir):
-    return path.join(log_dir, 'app.log')
+    global LOG_FILE, LOG_DIR
+    if LOG_FILE is None:
+        LOG_FILE = 'app.log'
+    return path.join(LOG_DIR, LOG_FILE)
 
-def configure_logging(log_level, console, log_filter=None):
+def configure_logging(log_level, console, log_filter=None, log_file=None):
+    global LOG_DIR, LOG_FILE
+    if log_file is not None:
+        log_file = path.abspath(path.normpath(log_file))
+        LOG_DIR = path.dirname(log_file)
+        LOG_FILE = path.basename(log_file)
+
     logging.addLevelName(TRACE, 'TRACE')
 
     numeric_level = getattr(logging, log_level.upper(), None)
@@ -53,6 +67,10 @@ def configure_logging(log_level, console, log_filter=None):
     dir_name = get_log_dir()
     if not path.isdir(dir_name):
         makedirs(dir_name)
+    
+    log_file = get_log_file(dir_name)
+
+    do_rollover = path.isfile(log_file)
 
     file_handler = handlers.RotatingFileHandler(
         get_log_file(dir_name),
@@ -60,7 +78,8 @@ def configure_logging(log_level, console, log_filter=None):
         maxBytes=rollover_bytes,
         backupCount=10
     )
-    file_handler.doRollover()
+    if do_rollover:
+        file_handler.doRollover()
     file_handler.setLevel(numeric_level)
     if log_filter:
         file_handler.addFilter(log_filter)
