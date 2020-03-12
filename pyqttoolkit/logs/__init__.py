@@ -21,7 +21,7 @@ from os import path, makedirs
 from enum import Enum
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QStandardPaths
+from PyQt5.QtCore import QStandardPaths
 #pylint: enable=no-name-in-module
 
 class CustomLogLevel(Enum):
