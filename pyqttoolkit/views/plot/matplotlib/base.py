@@ -243,7 +243,7 @@ class MatPlotLibBase(QWidget):
     
     def _handle_series_name_changed(self, index, series_name):
         if self._legend is not None and index < len(self._legend_control.seriesHandles):
-            visible_handles = [h for h, s in zip(self._legend_control.seriesHandles, self._legend_control.showSeries) if s]
+            visible_handles = [h for h, s in zip(self._legend_control.seriesHandles, self._legend_control.showSeries) if s and h is not None]
             try:
                 legend_index = visible_handles.index(self._legend_control.seriesHandles[index])
             except ValueError:
