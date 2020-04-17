@@ -14,7 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from .default import DefaultApplicationConfiguration
-from .multi_json_file import MultiJsonFileApplicationConfiguration
-from .composite import CompositeApplicationConfiguration
-from .environment import EnvironmentApplicationConfiguration
+import os
+from .base import BaseApplicationConfiguration
+
+class EnvironmentApplicationConfiguration(BaseApplicationConfiguration):    
+    def get_value(self, key):
+        return os.getenv(self._format_key(key))
+
+    def set_value(self, key, value):
+        os.environ[self._format_key(key)] = str(value)
+    
+    def _format_key(self, key):
+        return key.replace('.', '_').upper()
