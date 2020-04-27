@@ -98,6 +98,7 @@ class DateTimeEdit(QDateTimeEdit):
     def _handle_date_time_changed(self, value):
         if value is not None or (isinstance(value, QDateTime) and value.isValid()):
             self.isLimit = False
+        self.valueChanged.emit(self.value)
 
 
 DateTimeEdit = make_styleable(DateTimeEdit)
