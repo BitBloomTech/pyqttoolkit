@@ -8,6 +8,8 @@ from PyQt5.Qt import QApplication, QThread
 #pyline: enable=no-name-in-module
 
 from pyqttoolkit.services.task_runner import *
+from pytestqt.exceptions import capture_exceptions
+from pytestqt.qt_compat import qt_api
 
 class Result:
     def __init__(self):
@@ -49,19 +51,18 @@ async def test_result_is_correct(qtbot, task_runner):
     assert result.value == 42
 
 @pytest.mark.asyncio
-async def test_will_wait_for_cancel_lock_before_terminating(qtbot, task_runner):
+async def test_will_terminate_on_cancel_check(qtbot, task_runner):
     event_1 = Event()
     event_2 = Event()
     event_3 = Event()
     result = Result()
-    def _task(cancel_lock):
-        cancel_lock.acquire()
+    def _task():
         result.set(42)
         event_1.set()
         while not event_2.is_set():
             pass
         result.set(24)
-        cancel_lock.release()
+        task_runner.raiseForCancelled()
         while not event_3.is_set():
             pass
     with qtbot.waitSignal(task_runner.taskCancelled, timeout=10000):
@@ -78,15 +79,14 @@ async def test_will_wait_for_cancel_before_end(qtbot, task_runner):
     event_3 = Event()
     event_4 = Event()
     result = Result()
-    def _task(cancel_lock):
-        cancel_lock.acquire()
+    def _task():
         result.set(42)
         event_1.set()
         while not event_2.is_set():
             pass
         result.set(24)
         event_3.set()
-        cancel_lock.release()
+        task_runner.raiseForCancelled()
         while not event_4.is_set():
             pass
         result.set(7)
@@ -110,14 +110,16 @@ async def test_error_handler_called_if_error_raised(qtbot, task_runner):
     await wait_for(event.wait(), 1)
     assert isinstance(result.value, ValueError)
 
-@pytest.mark.qt_no_exception_capture
 def test_error_raised_if_no_error_handler(qtbot, task_runner):
-    event = Event()
+    exception = ValueError('value')
     def _task():
-        raise ValueError('value')
-    with pytest.raises(ValueError):    
-        with qtbot.waitSignal(task_runner.taskErrored, timeout=10000):
-            task_runner.run_task(_task)
+        raise exception
+    with capture_exceptions() as exceptions:
+        task_runner.run_task(_task)
+        time.sleep(1)
+        qt_api.QApplication.instance().processEvents()
+    assert len(exceptions) == 1
+    assert exceptions[0][1] == exception
 
 @pytest.mark.asyncio
 async def test_can_queue_tasks(qtbot, task_runner):

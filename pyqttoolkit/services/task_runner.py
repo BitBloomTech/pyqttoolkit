@@ -25,15 +25,16 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from PyQt5.Qt import QThreadPool, QRunnable, QThread, QSemaphore, QEvent, QCoreApplication
 #pylint: enable=no-name-in-module
 
+from concurrent.futures import ThreadPoolExecutor
+
 from ..properties import AutoProperty
 
 LOGGER = logging.getLogger(__name__)
 
 class BusyArgs(QObject):
-    def __init__(self, busy, long_running=False, indeterminate=True, cancellable=False, description=None):
+    def __init__(self, busy, indeterminate=True, cancellable=False, description=None):
         QObject.__init__(self, None)
         self._busy = busy
-        self._long_running = long_running
         self._indeterminate = indeterminate
         self._cancellable = cancellable
         self._description = description
@@ -61,10 +62,6 @@ class BusyArgs(QObject):
         return self._busy
 
     @property
-    def long_running(self):
-        return self._long_running
-
-    @property
     def indeterminate(self):
         return self._indeterminate
     
@@ -76,50 +73,33 @@ class BusyArgs(QObject):
         if self._cancellable:
             self.cancelled.emit()
 
-class Worker(QThread):
-    def __init__(self, f, *args):
-        QThread.__init__(self)
+class TaskCancelled(Exception):
+    pass
+
+class Worker:
+    def __init__(self, task_runner, f, args, busy_args, on_completed, on_cancelled, on_error, error_description):
+        self._task_runner = task_runner
         self._f = f
         self._args = args
+        self._busy_args = busy_args
+        self._on_completed = on_completed
+        self._on_cancelled = on_cancelled
+        self._on_error = on_error
+        self._error_description = error_description
     
-    result = pyqtSignal(object)
-    error = pyqtSignal(object)
-
     def run(self):
+        if self._busy_args:
+            QCoreApplication.postEvent(self._task_runner, BusyEvent(self._busy_args))
         try:
-            result = self._f(*self._args)
+            result = self._f(*self._args.args, **self._args.kwargs)
+        except TaskCancelled:
+            QCoreApplication.postEvent(self._task_runner, CancelledEvent(self._on_cancelled))
         #pylint: disable=broad-except
         except Exception as e:
-            self.error.emit(e)
+            QCoreApplication.postEvent(self._task_runner, ErrorEvent(e, self._on_error, self._error_description))
         #pylint: enable=broad-except
         else:
-            self.result.emit(result)
-
-class CancelWorker(QThread):
-    def __init__(self, worker, cancel_lock):
-        QThread.__init__(self)
-        self._worker = worker
-        self._cancel_lock = cancel_lock
-
-    complete = pyqtSignal()
-    
-    def run(self):
-        self._cancel_lock.acquire()
-        self._worker.terminate()
-        self.complete.emit()
-
-class QueuedTask(QThread):
-    def __init__(self, task_runner, **kwargs):
-        QThread.__init__(self)
-        self._task_runner = task_runner
-        self._kwargs = kwargs
-    
-    complete = pyqtSignal()
-    
-    def run(self):
-        self._task_runner._queue_semaphore.acquire()
-        self._task_runner._run_task_no_queue(**self._kwargs)
-        self.complete.emit()
+            QCoreApplication.postEvent(self._task_runner, ResultEvent(result, self._on_completed))
 
 class ProgressUpdatedEvent(QEvent):
     def __init__(self, progress, message):
@@ -135,27 +115,61 @@ class ProgressUpdatedEvent(QEvent):
     def message(self):
         return self._message
 
-class CancelEvent(QEvent):
-    def __init__(self):
+class CancelledEvent(QEvent):
+    def __init__(self, on_cancelled):
         super().__init__(QEvent.User)
+        self._on_cancelled = on_cancelled
+    
+    @property
+    def on_cancelled(self):
+        return self._on_cancelled
 
 class ResultEvent(QEvent):
-    def __init__(self, result):
+    def __init__(self, result, on_completed=None):
         super().__init__(QEvent.User)
         self._result = result
+        self._on_completed = on_completed
     
     @property
     def result(self):
         return self._result
+    
+    @property
+    def on_completed(self):
+        return self._on_completed
 
 class ErrorEvent(QEvent):
-    def __init__(self, exception):
+    def __init__(self, exception, on_error, error_description):
         super().__init__(QEvent.User)
         self._exception = exception
+        self._on_error = on_error
+        self._error_description = error_description
     
     @property
     def exception(self):
         return self._exception
+    
+    @property
+    def on_error(self):
+        return self._on_error
+    
+    @property
+    def error_description(self):
+        return self._error_description
+
+class BusyEvent(QEvent):
+    def __init__(self, busy_args):
+        super().__init__(QEvent.User)
+        self._busy_args = busy_args
+    
+    @property
+    def args(self):
+        return self._busy_args
+
+class TaskArgs:
+    def __init__(self, args, kwargs):
+        self.args = args
+        self.kwargs = kwargs
 
 class TaskRunner(QObject):
     """class::TaskRunner
@@ -163,52 +177,18 @@ class TaskRunner(QObject):
     """
     def __init__(self, parent):
         QObject.__init__(self, parent)
-        self._current_worker = None
-        self._cancel_lock = None
-        self._cancel_worker = None
-        self._current_on_error = None
-        self._current_error_description = None
-        self._current_show_progress = None
-        self._current_on_completed = None
-        self._current_on_cancelled = None
-        self._queue_semaphore = QSemaphore(1)
-        self._queued_tasks = []
+        self._is_cancelled = False
+        self._executor = ThreadPoolExecutor(max_workers=1)
 
-    def run_task(self, task_function, task_args=None, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, long_running=False, show_progress=True, background=False):
+    def run_task(self, task_function, task_args=None, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, show_progress=True, cancellable=False, **kwargs):
         """function::runTask(self, task_function, task_args, on_completed, on_error)
         :param task_function: The function to execute
         :param task_args: The arguments to pass to the function
         :param on_completed: The function to execute when the task completes
         :param on_error: The function to execute when the task errors
         """
-        if self._queue_semaphore.tryAcquire():
-            self._run_task_no_queue(task_function, task_args, on_completed, on_cancelled, on_error, description, error_description, long_running, show_progress, background)
-        else:
-            LOGGER.info('Queueing task %s...', description)
-            task = QueuedTask(self, 
-                task_function=task_function, 
-                task_args=task_args, 
-                on_completed=on_completed, 
-                on_cancelled=on_cancelled, 
-                on_error=on_error, 
-                description=description, 
-                error_description=error_description, 
-                long_running=long_running, 
-                show_progress=show_progress, 
-                background=background
-            )
-            self._queued_tasks.append(task)
-            task.complete.connect(lambda: self._queued_tasks.remove(task))
-            task.start()
-    
-    def _run_task_no_queue(self, task_function, task_args=None, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, long_running=False, show_progress=True, background=False):
         LOGGER.info('Starting task "%s"...', description)
         task_args = task_args or []
-        self._current_on_error = on_error
-        self._current_error_description = error_description
-        self._current_show_progress = show_progress
-        self._current_on_completed = on_completed
-        self._current_on_cancelled = on_cancelled
 
         kwargs = {}
 
@@ -219,104 +199,76 @@ class TaskRunner(QObject):
             indeterminate = False
         else:
             indeterminate = True
-        
-        if 'cancel_lock' in parameters:
-            self._cancel_lock = QSemaphore(1)
-            kwargs['cancel_lock'] = self._cancel_lock
-            cancellable = True
-        else:
-            cancellable = False
-        
-        task_delegate = lambda a: task_function(*a, **kwargs)
 
-        if show_progress:
-            self.busy = BusyArgs(True, long_running, indeterminate, cancellable, description)
-            self.busy.cancelled.connect(self.cancel)
+        busy_args = BusyArgs(True, indeterminate, cancellable, description) if show_progress else None
 
-        self._current_worker = Worker(task_delegate, task_args)
-        self._current_worker.result.connect(self._on_result)
-        self._current_worker.error.connect(self._on_error)
-        self._current_worker.start(QThread.NormalPriority if not background else QThread.LowPriority)
+        worker = Worker(
+            self, task_function, TaskArgs(task_args, kwargs),
+            busy_args=busy_args, on_completed=on_completed,
+            on_cancelled=on_cancelled, on_error=on_error,
+            error_description=error_description
+        )
+        self._executor.submit(worker.run)
     
-    def wait(self):
-        if self._current_worker is None:
-            return
-        self._current_worker.wait()
-
     def update_progress(self, percent, message):
         QCoreApplication.postEvent(self, ProgressUpdatedEvent(float(percent), message))
     
     def event(self, event):
         if isinstance(event, ProgressUpdatedEvent):
-            if self._current_worker is not None:
+            if self.busy is not None:
                 self.busy.updateProgress(float(event.progress), event.message)
             return True
+        elif isinstance(event, BusyEvent):
+            self.busy = event.args
+            self.busy.cancelled.connect(self.cancel)
+            return True
         elif isinstance(event, ResultEvent):
-            self.resetWorker()
-            try:
-                if self._current_on_completed is not None:
-                    self._current_on_completed(event.result)
-                self.taskCompleted.emit()
-            finally:
-                self.resetTask()
-        elif isinstance(event, CancelEvent):
-            self.resetWorker()
-            try:
-                self.busy.cancelComplete.emit()
-                self.taskCancelled.emit()
-                if self._current_on_cancelled is not None:
-                    self._current_on_cancelled()
-            finally:
-                self.resetTask()
+            LOGGER.info('Task complete')
+            self.reset()
+            if event.on_completed is not None:
+                event.on_completed(event.result)
+            self.taskCompleted.emit()
+            return True
+        elif isinstance(event, CancelledEvent):
+            LOGGER.info('Task cancelled')
+            self.reset()
+            self.busy.cancelComplete.emit()
+            self.taskCancelled.emit()
+            if event.on_cancelled is not None:
+                event.on_cancelled()
+            return True
         elif isinstance(event, ErrorEvent):
-            self.resetWorker()
-            try:
-                LOGGER.info('Error running task: %s', event.exception)
-                if self._current_error_description is not None and self._current_on_error is not None:
-                    self.error.emit(self._current_error_description)
-                    self.taskErrored.emit()
-                elif self._current_on_error is not None:
-                    self._current_on_error(event.exception)
-                    self.taskErrored.emit()
-                else:
-                    raise event.exception
-            finally:
-                self.resetTask()
+            LOGGER.info('Task error')
+            self.reset()
+            LOGGER.info('Error running task: %s', event.exception)
+            if event.error_description is not None:
+                self.error.emit(event.error_description)
+                self.taskErrored.emit()
+            elif event.on_error is not None:
+                event.on_error(event.exception)
+                self.taskErrored.emit()
+            else:
+                raise event.exception
+            return True
         return super().event(event)
     
     def cancel(self):
-        if self._cancel_lock is not None:
-            self.busy.updateProgress(self.busy.progress, self.tr('Cancelling...'))
-            self._cancel_worker = CancelWorker(self._current_worker, self._cancel_lock)
-            self._cancel_worker.complete.connect(self._cancel_complete)
-            self._cancel_worker.start()
-        else:
-            raise RuntimeError('Cannot cancel task, no cancel lock found')
-
-    def _cancel_complete(self):
-        QCoreApplication.postEvent(self, CancelEvent())
-
-    def _on_error(self, exception):
-        QCoreApplication.postEvent(self, ErrorEvent(exception))
-
-    def _on_result(self, result):
-        QCoreApplication.postEvent(self, ResultEvent(result))
+        if not self._is_cancelled:
+            if self.busy:
+                self.busy.updateProgress(self.busy.progress, self.tr('Cancelling...'))
+            self._is_cancelled = True
     
-    def resetWorker(self):
+    def isCancelled(self):
+        return self._is_cancelled
+    
+    def raiseForCancelled(self):
+        if self._is_cancelled:
+            raise TaskCancelled()
+
+    def reset(self):
         self.busy = BusyArgs(False, description=None)
-        LOGGER.info('Resetting task...')
-        self._current_worker = None
-        self._cancel_lock = None
-        self._cancel_worker = None
+        self._is_cancelled = False
     
-    def resetTask(self):
-        self._current_on_error = None
-        self._current_error_description = None
-        self._current_show_progress = None
-        self._current_on_completed = None
-        self._current_on_cancelled = None
-        self._queue_semaphore.release()
-
     busyChanged = pyqtSignal(BusyArgs)
     error = pyqtSignal(str)
     cancelComplete = pyqtSignal()

@@ -124,13 +124,7 @@ class ProjectUpdater(QObject):
         Calls the update_function to perform the desired updates
         """
         self.dirty = True
-        # Ensure events are processed (message boxes displayed etc.) before hogging the thread
-        QCoreApplication.processEvents()
-        update_event = UpdateEvent(update_function)
-        QCoreApplication.postEvent(self, update_event)
-        # Process the event we just posted...
-        QCoreApplication.processEvents()
-        result = update_event.result()
+        result = update_function(None)
         if updated_properties:
             for prop in updated_properties:
                 self._on_project_updated(prop)
