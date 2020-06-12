@@ -19,10 +19,7 @@ from logging import handlers
 from functools import wraps
 from os import path, makedirs
 from enum import Enum
-
-#pylint: disable=no-name-in-module
-from PyQt5.QtCore import QStandardPaths
-#pylint: enable=no-name-in-module
+import appdirs
 
 class CustomLogLevel(Enum):
     TRACE = 5
@@ -35,7 +32,7 @@ LOG_FILE = None
 def get_log_dir():
     global LOG_DIR
     if LOG_DIR is None:
-        LOG_DIR = path.join(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation), 'logs')
+        LOG_DIR = path.join(path.dirname(appdirs.AppDirs('PyQtToolkit', roaming=True).user_data_dir), 'logs')
     return LOG_DIR
 
 def get_log_file(log_dir):

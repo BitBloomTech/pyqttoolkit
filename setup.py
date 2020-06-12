@@ -11,12 +11,11 @@ with open(path.join(_here, 'README.md')) as fp:
     README_CONTENTS = fp.read()
 
 install_requires = [
-    'pyqt5==5.9.*',
-    'matplotlib==2.2.*',
     'jinja2',
     'pandas',
-    'fonttools==3.32.0'
+    'appdirs'
 ]
+
 tests_require = [
     'tox',
     'pytest',

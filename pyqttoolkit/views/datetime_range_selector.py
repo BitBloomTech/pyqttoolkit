@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import QGridLayout, QSizePolicy
 from datetime import timedelta
 
 from pyqttoolkit.properties import auto_property, bind, unbind
-from pyqttoolkit.datetime import step_qdatetime
+from pyqttoolkit.datetime.qdatetime import step_qdatetime
 from pyqttoolkit.services.link_manager import IncompatibleWidgets
 from .linkable import LinkableWidget
 from .datetime import DateTimeEdit
