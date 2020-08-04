@@ -14,18 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from .base import BaseApplicationConfiguration
+from PyQt5.Qt import pyqtSignal, QObject
 
-class CompositeApplicationConfiguration(BaseApplicationConfiguration):
-    def __init__(self, *inners):
-        self._inners = inners
+class WithValueChangedConfiguration(QObject):
+    def __init__(self, inner):
+        super().__init__()
+        self._inner = inner
+    
+    onValueChanged = pyqtSignal(str, object)
     
     def get_value(self, key):
-        for inner in self._inners:
-            value = inner.get_value(key)
-            if value is not None:
-                return value
-        return None
-    
+        return self._inner.get_value(key)
+
     def set_value(self, key, value):
-        self._inners[0].set_value(key, value)
+        self._inner.set_value(key, value)
+        self.onValueChanged.emit(key, value)

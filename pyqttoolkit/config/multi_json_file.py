@@ -47,6 +47,9 @@ class MultiJsonFileApplicationConfiguration(BaseApplicationConfiguration):
         result = values
         for p in value_path:
             result = result.get(p, {})
+        
+        if result == {}:
+            return None
 
         return result
 
