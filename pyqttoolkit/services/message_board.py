@@ -32,6 +32,7 @@ class MessageResponse(IntEnum):
     cancel = 2
     save = 4
     discard = 8
+    ignore = 16
 
 class MessageArgs(QObject):
     def __init__(self, parent, message_type, message, checkbox_message, response_type):

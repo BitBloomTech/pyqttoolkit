@@ -23,10 +23,13 @@ class LauncherConfig(QObject):
     def __init__(self):
         QObject.__init__(self)
         self.enabled = False
+        self.checked = False
 
     enabledChanged = pyqtSignal(bool)
+    checkedChanged = pyqtSignal(bool)
 
     enabled = AutoProperty(bool)
+    checked = AutoProperty(bool)
     
     @property
     def buttonTitle(self):
