@@ -82,8 +82,8 @@ def typed_bindable_combo_box(type_):
 
         def _update_index(self, value):
             index = self._get_index(value)
-            index = index if index is not None else 0
-            if 0 <= index < self.model().rowCount():
+            index = index if index is not None else -1
+            if -1 <= index < self.model().rowCount():
                 self.setCurrentIndex(index)
 
         
