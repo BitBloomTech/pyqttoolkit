@@ -105,12 +105,16 @@ class PlotOptionsView(QWidget):
     showGridLinesChanged = pyqtSignal(bool)
     xAxisLowerLimitChanged = pyqtSignal(float)
     xAxisUpperLimitChanged = pyqtSignal(float)
+    xAxisLimitsChanged = pyqtSignal(float, float)
     yAxisLowerLimitChanged = pyqtSignal(float)
     yAxisUpperLimitChanged = pyqtSignal(float)
-    secondaryYAxisLowerLimitChanged = pyqtSignal(float)
-    secondaryYAxisUpperLimitChanged = pyqtSignal(float)
+    yAxisLimitsChanged = pyqtSignal(float, float)
     secondaryXAxisLowerLimitChanged = pyqtSignal(float)
     secondaryXAxisUpperLimitChanged = pyqtSignal(float)
+    secondaryXAxisLimitsChanged = pyqtSignal(float, float)
+    secondaryYAxisLowerLimitChanged = pyqtSignal(float)
+    secondaryYAxisUpperLimitChanged = pyqtSignal(float)
+    secondaryYAxisLimitsChanged = pyqtSignal(float, float)
 
     showGridLines = AutoProperty(bool)
     xAxisLowerLimit = AutoProperty(float)
@@ -135,6 +139,34 @@ class PlotOptionsView(QWidget):
     @property
     def grid_lines(self):
         return self._grid_lines
+    
+    def setXLimits(self, x_lower, x_upper):
+        blocked = self.blockSignals(True)
+        self.xAxisLowerLimit = x_lower
+        self.xAxisUpperLimit = x_upper
+        self.blockSignals(blocked)
+        self.xAxisLimitsChanged.emit(x_lower, x_upper)
+    
+    def setYLimits(self, y_lower, y_upper):
+        blocked = self.blockSignals(True)
+        self.yAxisLowerLimit = y_lower
+        self.yAxisUpperLimit = y_upper
+        self.blockSignals(blocked)
+        self.yAxisLimitsChanged.emit(y_lower, y_upper)
+    
+    def setSecondaryXLimits(self, x_lower, x_upper):
+        blocked = self.blockSignals(True)
+        self.secondaryXAxisLowerLimit = x_lower
+        self.secondaryXAxisUpperLimit = x_upper
+        self.blockSignals(blocked)
+        self.secondaryXAxisLimitsChanged.emit(x_lower, x_upper)
+    
+    def setSecondaryYLimits(self, y_lower, y_upper):
+        blocked = self.blockSignals(True)
+        self.secondaryYAxisLowerLimit = y_lower
+        self.secondaryYAxisUpperLimit = y_upper
+        self.blockSignals(blocked)
+        self.secondaryYAxisLimitsChanged.emit(y_lower, y_upper)
     
     @property
     def x_limits(self):

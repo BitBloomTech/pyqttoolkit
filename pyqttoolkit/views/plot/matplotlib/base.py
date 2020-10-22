@@ -185,14 +185,18 @@ class MatPlotLibBase(QWidget):
             self._options_view.xAxisLowerLimitChanged,
             self._options_view.xAxisUpperLimitChanged,
             self._options_view.yAxisLowerLimitChanged,
-            self._options_view.yAxisUpperLimitChanged
+            self._options_view.yAxisUpperLimitChanged,
+            self._options_view.xAxisLimitsChanged,
+            self._options_view.yAxisLimitsChanged
         )
         connect_all(
             self._handle_options_view_secondary_limit_changed,
             self._options_view.secondaryXAxisLowerLimitChanged,
             self._options_view.secondaryXAxisUpperLimitChanged,
             self._options_view.secondaryYAxisLowerLimitChanged,
-            self._options_view.secondaryYAxisUpperLimitChanged
+            self._options_view.secondaryYAxisUpperLimitChanged,
+            self._options_view.secondaryXAxisLimitsChanged,
+            self._options_view.secondaryYAxisLimitsChanged
         )
     
     def setLegendControl(self, legend_control):
@@ -411,11 +415,9 @@ class MatPlotLibBase(QWidget):
         (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
         if self._options_view is not None:
             if self._options_view.x_limits:
-                self._options_view.xAxisLowerLimit = float(x_min)
-                self._options_view.xAxisUpperLimit = float(x_max)
+                self._options_view.setXLimits(float(x_min), float(x_max))
             if self._options_view.y_limits:
-                self._options_view.yAxisLowerLimit = float(y_min)
-                self._options_view.yAxisUpperLimit = float(y_max)
+                self._options_view.setYLimits(float(y_min), float(y_max))
         self._axes.set_xlim(*_safe_limits(x_min, x_max))
         self._axes.set_ylim(*_safe_limits(y_min, y_max))
     
@@ -425,14 +427,12 @@ class MatPlotLibBase(QWidget):
                 enabled = self._secondary_y_enabled()
                 secondary_y_min, secondary_y_max = self._get_secondary_y_extent() if enabled else (float('nan'), float('nan'))
                 self._options_view.setSecondaryYLimitsEnabled(enabled)
-                self._options_view.secondaryYAxisLowerLimit = float(secondary_y_min)
-                self._options_view.secondaryYAxisUpperLimit = float(secondary_y_max)
+                self._options_view.setSecondaryYLimits(float(secondary_y_min), float(secondary_y_max))
             if self._options_view.secondary_x_limits:
                 enabled = self._secondary_x_enabled()
                 secondary_x_min, secondary_x_max = self._get_secondary_x_extent() if enabled else (float('nan'), float('nan'))
                 self._options_view.setSecondaryXLimitsEnabled(enabled)
-                self._options_view.secondaryXAxisLowerLimit = float(secondary_x_min)
-                self._options_view.secondaryXAxisUpperLimit = float(secondary_x_max)
+                self._options_view.setSecondaryXLimits(float(secondary_x_min), float(secondary_x_max))
         if self._has_secondary_y_extent():
             self._secondary_axes.set_ylim(*_safe_limits(*self._get_secondary_y_extent()))
         if self._has_secondary_x_extent():
