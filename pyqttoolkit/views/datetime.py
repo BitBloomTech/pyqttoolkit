@@ -43,7 +43,8 @@ class DateTimeEdit(QDateTimeEdit):
         self.isLimitChanged.connect(self._handle_is_limit_changed)
         self.dateTimeChanged.connect(self._handle_date_time_changed)
         self.setCalendarPopup(calendar_popup)
-        self.calendarWidget().clicked.connect(self._handle_date_changed_from_calendar)
+        if calendar_popup:
+            self.calendarWidget().clicked.connect(self._handle_date_changed_from_calendar)
 
     valueChanged = pyqtSignal(QDateTime)
     isLimitChanged = pyqtSignal(bool)
