@@ -20,7 +20,7 @@ Defines the DateTimeEdit class
 from enum import Enum
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QDateTimeEdit, QDateTime, pyqtSignal
+from PyQt5.Qt import QDateTimeEdit, QDateTime, QTime, pyqtSignal
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import auto_property, AutoProperty
@@ -43,6 +43,8 @@ class DateTimeEdit(QDateTimeEdit):
         self.isLimitChanged.connect(self._handle_is_limit_changed)
         self.dateTimeChanged.connect(self._handle_date_time_changed)
         self.setCalendarPopup(calendar_popup)
+        if calendar_popup:
+            self.calendarWidget().clicked.connect(self._handle_date_changed_from_calendar)
 
     valueChanged = pyqtSignal(QDateTime)
     isLimitChanged = pyqtSignal(bool)
@@ -100,5 +102,7 @@ class DateTimeEdit(QDateTimeEdit):
             self.isLimit = False
         self.valueChanged.emit(self.value)
 
+    def _handle_date_changed_from_calendar(self, value):
+        self.value = QDateTime(value, QTime(0, 0))
 
 DateTimeEdit = make_styleable(DateTimeEdit)
