@@ -129,6 +129,8 @@ class PlotOptionsView(QWidget):
             return 'inf'
         if value == -np.inf:
             return '-inf'
+        if np.isnan(value):
+            return 'Auto'
         value = int(value * 100) / 100
         return '{0:.2g}'.format(value)
     
