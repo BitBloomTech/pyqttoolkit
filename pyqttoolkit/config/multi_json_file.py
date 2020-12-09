@@ -17,6 +17,7 @@
 from os import path, makedirs
 from json import load, dump, JSONDecodeError
 import logging
+import shutil
 
 from .base import BaseApplicationConfiguration
 
@@ -42,6 +43,7 @@ class MultiJsonFileApplicationConfiguration(BaseApplicationConfiguration):
                 values = load(fp)
         except JSONDecodeError as err:
             LOGGER.warning('Invalid json file, exception: %s', err)
+            self._backup_file(filename)
             return None
         
         result = values
@@ -52,6 +54,16 @@ class MultiJsonFileApplicationConfiguration(BaseApplicationConfiguration):
             return None
 
         return result
+
+    def _backup_file(self, filename):
+        backup_path_root = path.join(path.dirname(filename), f'{path.basename(filename)}.json.bak')
+        attempt = 0
+        backup_path = backup_path_root
+        while path.isfile(backup_path):
+            attempt += 1
+            backup_path = backup_path_root + f'.{attempt}'
+        LOGGER.warning('Backing up config file %s to %s', filename, backup_path)
+        shutil.move(filename, backup_path)
 
     def set_value(self, key, value):
         parts = key.split('.')
