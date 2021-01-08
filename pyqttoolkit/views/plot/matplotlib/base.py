@@ -280,15 +280,20 @@ class MatPlotLibBase(QWidget):
         kwargs = dict(color=gridline_color, alpha=0.5) if show_grid_lines else {}
         self._axes.grid(show_grid_lines, **kwargs)
         self.draw()
-    
+
+    def _get_data_xy_extents(self):
+        (x_min, x_max), (y_min, y_max) = self.data.get_xy_extents()
+        return self._pad_extent(x_min, x_max, self.x_extent_padding), self._pad_extent(y_min, y_max, self.y_extent_padding)
+
     def _handle_options_view_limit_changed(self):
         if self._options_view is None:
             return
         (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
-        new_x_min = x_min if np.isnan(self._options_view.xAxisLowerLimit) else self._options_view.xAxisLowerLimit
-        new_x_max = x_max if np.isnan(self._options_view.xAxisUpperLimit) else self._options_view.xAxisUpperLimit
-        new_y_min = y_min if np.isnan(self._options_view.yAxisLowerLimit) else self._options_view.yAxisLowerLimit
-        new_y_max = y_max if np.isnan(self._options_view.yAxisUpperLimit) else self._options_view.yAxisUpperLimit
+        (data_x_min, data_x_max), (data_y_min, data_y_max) = self._get_data_xy_extents() if self.data else ((0, 0), (0, 0))
+        new_x_min = data_x_min if np.isnan(self._options_view.xAxisLowerLimit) else self._options_view.xAxisLowerLimit
+        new_x_max = data_x_max if np.isnan(self._options_view.xAxisUpperLimit) else self._options_view.xAxisUpperLimit
+        new_y_min = data_y_min if np.isnan(self._options_view.yAxisLowerLimit) else self._options_view.yAxisLowerLimit
+        new_y_max = data_y_max if np.isnan(self._options_view.yAxisUpperLimit) else self._options_view.yAxisUpperLimit
         if [new_x_min, new_x_max, new_y_min, new_y_max] != [x_min, x_max, y_min, y_max]:
             self._xy_extents = (new_x_min, new_x_max), (new_y_min, new_y_max)
             self._set_axes_limits()
@@ -298,17 +303,18 @@ class MatPlotLibBase(QWidget):
         if self._options_view is None:
             return
         updated = False
+        (data_x_min, data_x_max), (data_y_min, data_y_max) = self._get_data_xy_extents() if self.data else ((0, 0), (0, 0))
         if self._has_secondary_y_extent():
             y_min, y_max = self._get_secondary_y_extent()
-            new_y_min = y_min if np.isnan(self._options_view.secondaryYAxisLowerLimit) else self._options_view.secondaryYAxisLowerLimit
-            new_y_max = y_max if np.isnan(self._options_view.secondaryYAxisUpperLimit) else self._options_view.secondaryYAxisUpperLimit
+            new_y_min = data_y_min if np.isnan(self._options_view.secondaryYAxisLowerLimit) else self._options_view.secondaryYAxisLowerLimit
+            new_y_max = data_y_max if np.isnan(self._options_view.secondaryYAxisUpperLimit) else self._options_view.secondaryYAxisUpperLimit
             if [new_y_min, new_y_max] != [y_min, y_max]:
                 self._secondary_y_extent = (new_y_min, new_y_max)
                 updated = True
         if self._has_secondary_x_extent():
             x_min, x_max = self._get_secondary_x_extent()
-            new_x_min = x_min if np.isnan(self._options_view.secondaryXAxisLowerLimit) else self._options_view.secondaryXAxisLowerLimit
-            new_x_max = x_max if np.isnan(self._options_view.secondaryXAxisUpperLimit) else self._options_view.secondaryXAxisUpperLimit
+            new_x_min = data_x_min if np.isnan(self._options_view.secondaryXAxisLowerLimit) else self._options_view.secondaryXAxisLowerLimit
+            new_x_max = data_x_max if np.isnan(self._options_view.secondaryXAxisUpperLimit) else self._options_view.secondaryXAxisUpperLimit
             if [new_x_min, new_x_max] != [x_min, x_max]:
                 self._secondary_x_extent = (new_x_min, new_x_max)
                 updated = True
@@ -461,8 +467,7 @@ class MatPlotLibBase(QWidget):
         if self.data is None:
             return (0, 0), (0, 0)
         if self._xy_extents is None:
-            (x_min, x_max), (y_min, y_max) = self.data.get_xy_extents()
-            return self._pad_extent(x_min, x_max, self.x_extent_padding), self._pad_extent(y_min, y_max, self.y_extent_padding)
+            return self._get_data_xy_extents()
         return self._xy_extents
     
     def _has_secondary_y_extent(self):
