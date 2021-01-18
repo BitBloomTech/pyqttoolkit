@@ -17,7 +17,7 @@
 from math import isnan, isfinite
 
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import QDoubleValidator, pyqtSignal
+from PyQt5.Qt import QDoubleValidator, pyqtSignal, Qt
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.properties import AutoProperty
@@ -51,11 +51,12 @@ FloatEdit = _type_editor(float, 0.0)
 IntEdit = _type_editor(int, 0)
 
 class InfFloatLineEdit(LineEdit):
-    def __init__(self, parent, formatter=None):
+    def __init__(self, parent, formatter=None, update_on_enter_pressed=True):
         LineEdit.__init__(self, parent)
         self.editComplete.connect(self._handle_edit_complete)
         self.valueChanged.connect(self._handle_value_changed)
         self._formatter = formatter
+        self._update_on_enter_pressed = update_on_enter_pressed
     
     valueChanged = pyqtSignal(float)
     value = AutoProperty(float)
@@ -74,10 +75,16 @@ class InfFloatLineEdit(LineEdit):
             return self._formatter(value)
         else:
             return str(value)
+            
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        if event.key() in [Qt.Key_Enter, Qt.Key_Return] and self._update_on_enter_pressed:
+            self.valueChanged.emit(self.value)
+
 
 class AutoFloatLineEdit(InfFloatLineEdit):
-    def __init__(self, parent, allow_inf=True, default_text=None, formatter=None):
-        InfFloatLineEdit.__init__(self, parent, formatter)
+    def __init__(self, parent, allow_inf=True, default_text=None, formatter=None, update_on_enter_pressed=True):
+        InfFloatLineEdit.__init__(self, parent, formatter, update_on_enter_pressed)
         self._allow_inf = allow_inf
         self._default_text_ = default_text or self.tr('Auto')
 
@@ -86,7 +93,7 @@ class AutoFloatLineEdit(InfFloatLineEdit):
         return self._default_text_
     
     def _handle_edit_complete(self):
-        if self.text().lower() == self._default_text.lower() and not isnan(self.value):
+        if self.text().lower() == self._default_text.lower() or not self.text():
             self._reset()
         else:
             if not self._allow_inf:

@@ -17,6 +17,7 @@
 from io import BytesIO
 import numpy as np
 from datetime import datetime
+from functools import partial
 
 #pylint: disable=no-name-in-module
 from PyQt5.QtCore import pyqtSignal
@@ -34,6 +35,7 @@ from pyqttoolkit.properties import AutoProperty, connect_all, bind
 from pyqttoolkit.models import SpanModel
 from pyqttoolkit.views import TableView
 from pyqttoolkit.colors import interpolate_rgb
+from contextlib import contextmanager
 
 from ..tool_type import ToolType
 from .font import MatPlotLibFont
@@ -164,6 +166,7 @@ class MatPlotLibBase(QWidget):
         self._secondary_axes = self._secondary_y_extent = self._secondary_x_extent = None
         self._legend = None
         self._draggable_legend = None
+        self._setting_axis_limits = False
 
         self.hasHiddenSeries = False
 
@@ -180,24 +183,19 @@ class MatPlotLibBase(QWidget):
         self._options_view.setSecondaryXLimitsEnabled(self._secondary_x_enabled())
 
         self._options_view.showGridLinesChanged.connect(self._update_grid_lines)
-        connect_all(
-            self._handle_options_view_limit_changed,
-            self._options_view.xAxisLowerLimitChanged,
-            self._options_view.xAxisUpperLimitChanged,
-            self._options_view.yAxisLowerLimitChanged,
-            self._options_view.yAxisUpperLimitChanged,
-            self._options_view.xAxisLimitsChanged,
-            self._options_view.yAxisLimitsChanged
-        )
-        connect_all(
-            self._handle_options_view_secondary_limit_changed,
-            self._options_view.secondaryXAxisLowerLimitChanged,
-            self._options_view.secondaryXAxisUpperLimitChanged,
-            self._options_view.secondaryYAxisLowerLimitChanged,
-            self._options_view.secondaryYAxisUpperLimitChanged,
-            self._options_view.secondaryXAxisLimitsChanged,
-            self._options_view.secondaryYAxisLimitsChanged
-        )
+        self._options_view.xAxisLowerLimitChanged.connect(self._handle_options_view_limit_changed(x_min_changed=True))
+        self._options_view.xAxisUpperLimitChanged.connect(self._handle_options_view_limit_changed(x_max_changed=True))
+        self._options_view.yAxisLowerLimitChanged.connect(self._handle_options_view_limit_changed(y_min_changed=True))
+        self._options_view.yAxisUpperLimitChanged.connect(self._handle_options_view_limit_changed(y_max_changed=True))
+        self._options_view.xAxisLimitsChanged.connect(self._handle_options_view_limit_changed(x_min_changed=True, x_max_changed=True))
+        self._options_view.yAxisLimitsChanged.connect(self._handle_options_view_limit_changed(y_min_changed=True, y_max_changed=True))
+
+        self._options_view.secondaryXAxisLowerLimitChanged.connect(self._handle_options_view_secondary_limit_changed(x_min_changed=True))
+        self._options_view.secondaryXAxisUpperLimitChanged.connect(self._handle_options_view_secondary_limit_changed(x_max_changed=True))
+        self._options_view.secondaryYAxisLowerLimitChanged.connect(self._handle_options_view_secondary_limit_changed(y_min_changed=True))
+        self._options_view.secondaryYAxisUpperLimitChanged.connect(self._handle_options_view_secondary_limit_changed(y_max_changed=True))
+        self._options_view.secondaryXAxisLimitsChanged.connect(self._handle_options_view_secondary_limit_changed(x_min_changed=True, x_max_changed=True))
+        self._options_view.secondaryYAxisLimitsChanged.connect(self._handle_options_view_secondary_limit_changed(y_min_changed=True, y_max_changed=True))
     
     def setLegendControl(self, legend_control):
         self._legend_control = legend_control
@@ -280,47 +278,72 @@ class MatPlotLibBase(QWidget):
         kwargs = dict(color=gridline_color, alpha=0.5) if show_grid_lines else {}
         self._axes.grid(show_grid_lines, **kwargs)
         self.draw()
-
-    def _get_data_xy_extents(self):
-        (x_min, x_max), (y_min, y_max) = self.data.get_xy_extents()
-        return self._pad_extent(x_min, x_max, self.x_extent_padding), self._pad_extent(y_min, y_max, self.y_extent_padding)
-
-    def _handle_options_view_limit_changed(self):
-        if self._options_view is None:
-            return
-        (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
-        (data_x_min, data_x_max), (data_y_min, data_y_max) = self._get_data_xy_extents() if self.data else ((0, 0), (0, 0))
-        new_x_min = data_x_min if np.isnan(self._options_view.xAxisLowerLimit) else self._options_view.xAxisLowerLimit
-        new_x_max = data_x_max if np.isnan(self._options_view.xAxisUpperLimit) else self._options_view.xAxisUpperLimit
-        new_y_min = data_y_min if np.isnan(self._options_view.yAxisLowerLimit) else self._options_view.yAxisLowerLimit
-        new_y_max = data_y_max if np.isnan(self._options_view.yAxisUpperLimit) else self._options_view.yAxisUpperLimit
-        if [new_x_min, new_x_max, new_y_min, new_y_max] != [x_min, x_max, y_min, y_max]:
-            self._xy_extents = (new_x_min, new_x_max), (new_y_min, new_y_max)
-            self._set_axes_limits()
-            self.draw()
     
-    def _handle_options_view_secondary_limit_changed(self):
-        if self._options_view is None:
-            return
-        updated = False
-        (data_x_min, data_x_max), (data_y_min, data_y_max) = self._get_data_xy_extents() if self.data else ((0, 0), (0, 0))
-        if self._has_secondary_y_extent():
-            y_min, y_max = self._get_secondary_y_extent()
-            new_y_min = data_y_min if np.isnan(self._options_view.secondaryYAxisLowerLimit) else self._options_view.secondaryYAxisLowerLimit
-            new_y_max = data_y_max if np.isnan(self._options_view.secondaryYAxisUpperLimit) else self._options_view.secondaryYAxisUpperLimit
-            if [new_y_min, new_y_max] != [y_min, y_max]:
-                self._secondary_y_extent = (new_y_min, new_y_max)
-                updated = True
-        if self._has_secondary_x_extent():
-            x_min, x_max = self._get_secondary_x_extent()
-            new_x_min = data_x_min if np.isnan(self._options_view.secondaryXAxisLowerLimit) else self._options_view.secondaryXAxisLowerLimit
-            new_x_max = data_x_max if np.isnan(self._options_view.secondaryXAxisUpperLimit) else self._options_view.secondaryXAxisUpperLimit
-            if [new_x_min, new_x_max] != [x_min, x_max]:
-                self._secondary_x_extent = (new_x_min, new_x_max)
-                updated = True
-        if updated:
-            self._set_axes_limits()
-            self.draw()
+    def _handle_options_view_limit_changed(self, x_min_changed=False, x_max_changed=False, y_min_changed=False, y_max_changed=False):
+        def _():
+            if self._options_view is None or self._setting_axis_limits:
+                return
+            (x_min, x_max), (y_min, y_max) = (new_x_min, new_x_max), (new_y_min, new_y_max) = self._get_xy_extents()
+            (x_opt_min, x_opt_max), (y_opt_min, y_opt_max) = self._get_options_view_xy_extents()
+            if x_min_changed:
+                new_x_min = x_opt_min
+            if x_max_changed:
+                new_x_max = x_opt_max
+            if y_min_changed:
+                new_y_min = y_opt_min
+            if y_max_changed:
+                new_y_max = y_opt_max
+            if [new_x_min, new_x_max, new_y_min, new_y_max] != [x_min, x_max, y_min, y_max]:
+                self._xy_extents = (new_x_min, new_x_max), (new_y_min, new_y_max)
+                self._set_axes_limits()
+                self.draw()
+        return _
+    
+    def _get_options_view_xy_extents(self):
+        (x_data_min, x_data_max), (y_data_min, y_data_max) = self._get_data_xy_extents()
+        x_min = x_data_min if np.isnan(self._options_view.xAxisLowerLimit) else self._options_view.xAxisLowerLimit
+        x_max = x_data_max if np.isnan(self._options_view.xAxisUpperLimit) else self._options_view.xAxisUpperLimit
+        y_min = y_data_min if np.isnan(self._options_view.yAxisLowerLimit) else self._options_view.yAxisLowerLimit
+        y_max = y_data_max if np.isnan(self._options_view.yAxisUpperLimit) else self._options_view.yAxisUpperLimit
+        return (x_min, x_max), (y_min, y_max)
+
+    def _handle_options_view_secondary_limit_changed(self, x_min_changed=False, x_max_changed=False, y_min_changed=False, y_max_changed=False):
+        def _():
+            if self._options_view is None or self._setting_axis_limits:
+                return
+            updated = False
+            (x_opt_min, x_opt_max), (y_opt_min, y_opt_max) = self._get_options_view_secondary_xy_extents()
+            if self._has_secondary_y_extent() and (y_min_changed or y_max_changed):
+                y_min, y_max = new_y_min, new_y_max = self._get_secondary_y_extent()
+                if y_min_changed:
+                    new_y_min = y_opt_min
+                if y_max_changed:
+                    new_y_max = y_opt_max
+                if [new_y_min, new_y_max] != [y_min, y_max]:
+                    self._secondary_y_extent = (new_y_min, new_y_max)
+                    updated = True
+            if self._has_secondary_x_extent() and (x_min_changed or x_max_changed):
+                x_min, x_max = new_x_min, new_x_max = self._get_secondary_x_extent()
+                if x_min_changed:
+                    new_x_min = x_opt_min
+                if x_max_changed:
+                    new_x_max = x_opt_max
+                if [new_x_min, new_x_max] != [x_min, x_max]:
+                    self._secondary_x_extent = (new_x_min, new_x_max)
+                    updated = True
+            if updated:
+                self._set_axes_limits()
+                self.draw()
+        return _
+
+    def _get_options_view_secondary_xy_extents(self):
+        x_data_min, x_data_max = self._get_data_secondary_x_extent()
+        y_data_min, y_data_max = self._get_data_secondary_y_extent()
+        x_min = x_data_min if np.isnan(self._options_view.secondaryXAxisLowerLimit) else self._options_view.secondaryXAxisLowerLimit
+        x_max = x_data_max if np.isnan(self._options_view.secondaryXAxisUpperLimit) else self._options_view.secondaryXAxisUpperLimit
+        y_min = y_data_min if np.isnan(self._options_view.secondaryYAxisLowerLimit) else self._options_view.secondaryYAxisLowerLimit
+        y_max = y_data_max if np.isnan(self._options_view.secondaryYAxisUpperLimit) else self._options_view.secondaryYAxisUpperLimit
+        return (x_min, x_max), (y_min, y_max)
 
     def _on_data_changed(self):
         self._cached_label_width_height = None
@@ -413,19 +436,23 @@ class MatPlotLibBase(QWidget):
         max_ += diff * (1 - skew)
         min_ -= diff * skew
         return min_, max_
-
+    
     def _set_axes_limits(self):
-        if self._secondary_axes is not None:
-            self._set_secondary_axes_limits()
-        self._update_ticks()
-        (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
-        if self._options_view is not None:
-            if self._options_view.x_limits:
-                self._options_view.setXLimits(float(x_min), float(x_max))
-            if self._options_view.y_limits:
-                self._options_view.setYLimits(float(y_min), float(y_max))
-        self._axes.set_xlim(*_safe_limits(x_min, x_max))
-        self._axes.set_ylim(*_safe_limits(y_min, y_max))
+        try:
+            self._setting_axis_limits = True
+            if self._secondary_axes is not None:
+                self._set_secondary_axes_limits()
+            self._update_ticks()
+            (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
+            if self._options_view is not None:
+                if self._options_view.x_limits:
+                    self._options_view.setXLimits(float(x_min), float(x_max))
+                if self._options_view.y_limits:
+                    self._options_view.setYLimits(float(y_min), float(y_max))
+            self._axes.set_xlim(*_safe_limits(x_min, x_max))
+            self._axes.set_ylim(*_safe_limits(y_min, y_max))
+        finally:
+            self._setting_axis_limits = False
     
     def _set_secondary_axes_limits(self):
         if self._options_view is not None:
@@ -470,29 +497,41 @@ class MatPlotLibBase(QWidget):
             return self._get_data_xy_extents()
         return self._xy_extents
     
+    def _get_data_xy_extents(self):
+        if self.data is None:
+            return (0, 0), (0, 0)
+        (x_min, x_max), (y_min, y_max) = self.data.get_xy_extents()
+        return self._pad_extent(x_min, x_max, self.x_extent_padding), self._pad_extent(y_min, y_max, self.y_extent_padding)
+    
     def _has_secondary_y_extent(self):
-        return self._get_secondary_y_extent() is not None
+        return hasattr(self.data, 'get_secondary_y_extent')
     
     def _get_secondary_y_extent(self):
-        if not hasattr(self.data, 'get_secondary_y_extent'):
-            return None
         if self._secondary_y_extent is not None:
             return self._secondary_y_extent
         if self.data is not None:
-            return self._pad_extent(*self.data.get_secondary_y_extent(), self.y_extent_padding)
+            return self._get_data_secondary_y_extent()
         return (0, 0)
     
+    def _get_data_secondary_y_extent(self):
+        if self.data is None:
+            return (0, 0)
+        return self._pad_extent(*self.data.get_secondary_y_extent(), self.y_extent_padding)
+    
     def _has_secondary_x_extent(self):
-        return self._get_secondary_x_extent() is not None
+        return hasattr(self.data, 'get_secondary_x_extent')
 
     def _get_secondary_x_extent(self):
-        if not hasattr(self.data, 'get_secondary_x_extent'):
-            return None
         if self._secondary_x_extent is not None:
             return self._secondary_x_extent
         if self.data is not None:
-            return self._pad_extent(*self.data.get_secondary_x_extent(), self.x_extent_padding)
+            return self._get_data_secondary_x_extent()
         return (0, 0)
+    
+    def _get_data_secondary_x_extent(self):
+        if self.data is None:
+            return (0, 0)
+        return self._pad_extent(*self.data.get_secondary_x_extent(), self.x_extent_padding)
 
     def _get_actual_xy_extents(self):
         return self._axes.get_xlim(), self._axes.get_ylim()

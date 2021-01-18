@@ -145,28 +145,36 @@ class PlotOptionsView(QWidget):
     def setXLimits(self, x_lower, x_upper):
         blocked = self.blockSignals(True)
         self.xAxisLowerLimit = x_lower
+        self._x_axis_lower_limit.value = x_lower
         self.xAxisUpperLimit = x_upper
+        self._x_axis_upper_limit.value = x_upper
         self.blockSignals(blocked)
         self.xAxisLimitsChanged.emit(x_lower, x_upper)
     
     def setYLimits(self, y_lower, y_upper):
         blocked = self.blockSignals(True)
         self.yAxisLowerLimit = y_lower
+        self._y_axis_lower_limit.value = y_lower
         self.yAxisUpperLimit = y_upper
+        self._y_axis_upper_limit.value = y_upper
         self.blockSignals(blocked)
         self.yAxisLimitsChanged.emit(y_lower, y_upper)
     
     def setSecondaryXLimits(self, x_lower, x_upper):
         blocked = self.blockSignals(True)
         self.secondaryXAxisLowerLimit = x_lower
+        self._secondary_x_axis_lower_limit.value = x_lower
         self.secondaryXAxisUpperLimit = x_upper
+        self._secondary_x_axis_upper_limit.value = x_upper
         self.blockSignals(blocked)
         self.secondaryXAxisLimitsChanged.emit(x_lower, x_upper)
     
     def setSecondaryYLimits(self, y_lower, y_upper):
         blocked = self.blockSignals(True)
         self.secondaryYAxisLowerLimit = y_lower
+        self._secondary_y_axis_lower_limit.value = y_lower
         self.secondaryYAxisUpperLimit = y_upper
+        self._secondary_y_axis_upper_limit.value = y_upper
         self.blockSignals(blocked)
         self.secondaryYAxisLimitsChanged.emit(y_lower, y_upper)
     
