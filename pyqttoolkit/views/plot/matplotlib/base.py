@@ -529,7 +529,7 @@ class MatPlotLibBase(QWidget):
         return (0, 0)
     
     def _get_data_secondary_x_extent(self):
-        if self.data is None:
+        if self.data is None or not hasattr(self.data, 'get_secondary_x_extent'):
             return (0, 0)
         return self._pad_extent(*self.data.get_secondary_x_extent(), self.x_extent_padding)
 
