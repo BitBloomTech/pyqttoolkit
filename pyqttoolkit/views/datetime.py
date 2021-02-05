@@ -68,9 +68,11 @@ class DateTimeEdit(QDateTimeEdit):
     
     def setMinimumDateTime(self, min_date):
         self._min_date = min_date
+        super().setMinimumDateTime(min_date)
     
     def setMaximumDateTime(self, max_date):
         self._max_date = max_date
+        super().setMaximumDateTime(max_date)
     
     @auto_property(QDateTime)
     def value(self):
