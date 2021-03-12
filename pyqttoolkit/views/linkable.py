@@ -18,10 +18,11 @@ from PyQt5.Qt import QWidget
 #pylint: enable=no-name-in-module
 
 class LinkableWidget(QWidget):
-    def __init__(self, parent, link_manager=None):
+    def __init__(self, parent, link_manager=None, link_type=None):
         QWidget.__init__(self, parent)
         self._link_display = None
         self._link_manager = link_manager
+        self._link_type = link_type
     
     def linkDisplay(self):
         return self._link_display or self
@@ -41,3 +42,9 @@ class LinkableWidget(QWidget):
 
     def unlink(self, other):
         raise NotImplementedError()
+
+    def linkType(self):
+        return self._link_type
+
+    def setLinkType(self, value):
+        self._link_type = value

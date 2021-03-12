@@ -36,8 +36,8 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
     """class::DatetimeRangeSelectorWidget
     Widget to select a datetime range
     """
-    def __init__(self, parent, paging=False, link_manager=None, reset_enabled=True):
-        LinkableWidget.__init__(self, parent, link_manager)
+    def __init__(self, parent, paging=False, link_manager=None, reset_enabled=True, link_type=None):
+        LinkableWidget.__init__(self, parent, link_manager, link_type)
         self._date_range_start = self._date_range_end = None
         self._interval = None
         
