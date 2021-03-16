@@ -22,6 +22,7 @@ from .editable_combo_box import EditableComboBox
 from .shrunk_push_button import ShrunkPushButton, VShrunkPushButton
 from .tool_window import ToolWindow
 from .combo_box import ComboBox, BindableComboBox, typed_bindable_combo_box
+from .steppable_combo_box import SteppableComboBox
 from .linkable import LinkableWidget
 from .datetime import DateTimeEdit
 from .line_edit import LineEdit, BindableLineEdit
