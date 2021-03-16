@@ -20,11 +20,10 @@ from PyQt5.Qt import QWidget, QHBoxLayout, QLabel
 def make_labelled(parent, label: str, widget: QWidget):
     """Put a widget into a container with a label to the left of it. Like a single row of a `QFormLayout`"""
     container = QWidget(parent)
-    label = QLabel(label)
+    label_widget = QLabel(label)
     layout = QHBoxLayout(container)
     layout.setSpacing(0)
-    layout.addWidget(label)
+    layout.addWidget(label_widget)
     layout.addWidget(widget)
     layout.setContentsMargins(0, 0, 0, 0)
-    container.setLayout(layout)
     return container
