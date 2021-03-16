@@ -46,3 +46,4 @@ from .styleable import make_styleable
 from .popout import PopoutWidget
 from .popup import Popup
 from .delegates import ComboBoxItemDelegate, DateTimeItemDelegate, BulkValueSelectorItemDelegate
+from .labelled import make_labelled
