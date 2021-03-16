@@ -22,7 +22,7 @@ from pyqttoolkit.properties import AutoProperty, bind
 from .combo_box import BindableComboBox
 
 
-class ShiftableComboBox(QWidget):
+class SteppableComboBox(QWidget):
     """ComboBox with left and right shift buttons to decrease and increase the current index"""
     value = AutoProperty(str)
     valueChanged = pyqtSignal(str)
