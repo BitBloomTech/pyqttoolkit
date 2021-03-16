@@ -843,6 +843,12 @@ class MatPlotLibBase(QWidget):
                 height = max(height, next_height)
             self._cached_label_width_height = width, height
         return self._cached_label_width_height
+
+    def _create_new_axes(self, nx=1, ny=1) -> LocatableAxes:
+        axes = LocatableAxes(self._figure, self._divider.get_position())
+        axes.set_axes_locator(self._divider.new_locator(nx=nx, ny=ny))
+        self._figure.add_axes(axes)
+        return axes
     
     @staticmethod
     def _create_secondary_xy_axes(figure, divider, nx=1, ny=1, visible=False, z_order=1):
