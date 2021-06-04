@@ -36,10 +36,12 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
     """class::DatetimeRangeSelectorWidget
     Widget to select a datetime range
     """
-    def __init__(self, parent, paging=False, link_manager=None, reset_enabled=True, link_type=None):
+    def __init__(self, parent, paging=False, link_manager=None, reset_enabled=True, link_type=None,
+                    update_limits_on_value_change: bool = True):
         LinkableWidget.__init__(self, parent, link_manager, link_type)
         self._date_range_start = self._date_range_end = None
         self._interval = None
+        self._update_limits_on_value_change = update_limits_on_value_change
         
         if paging:
             self._back_one = IconButton('left.svg', self.tr('Scroll Left'), self, QSize(8, 30))
@@ -166,11 +168,13 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
         return self._layout.sizeHint()
 
     def _date_from_changed(self, value):
-        self._to_selector.setMinimumDateTime(value)
+        if self._update_limits_on_value_change:
+            self._to_selector.setMinimumDateTime(value)
         self.dateFromChanged.emit(value)
 
     def _date_to_changed(self, value):
-        self._from_selector.setMaximumDateTime(value)
+        if self._update_limits_on_value_change:
+            self._from_selector.setMaximumDateTime(value)
         self.dateToChanged.emit(value)
     
     def _step(self, fraction):
