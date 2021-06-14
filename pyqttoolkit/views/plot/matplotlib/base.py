@@ -137,7 +137,7 @@ class MatPlotLibBase(QWidget):
         self._pending_draw = None
         self._pending_artists_draw = None
         self._other_draw_events = []
-        self._draw_timer = QTimer()
+        self._draw_timer = QTimer(self)
         self._draw_timer.timeout.connect(self._do_draw_events)
         self._draw_timer.start(20)
         self._zoom_skew = None
@@ -708,7 +708,7 @@ class MatPlotLibBase(QWidget):
                     self._axes.draw_artist(a)
                 self._canvas.update()
             self._pending_artists_draw = _update
-    
+        
     def _do_draw_events(self):
         if self._pending_draw is not None:
             self._pending_draw()
