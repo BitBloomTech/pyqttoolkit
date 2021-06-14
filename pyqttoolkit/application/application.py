@@ -23,6 +23,7 @@ from PyQt5.Qt import QApplication, QWidget, pyqtSignal
 
 from pyqttoolkit.services import MessageBoard, TaskRunner, ToolWindowService, EventRegistry, ObjectConverter
 from pyqttoolkit.dependencies import DependencyContainer
+from .garbage_collector import GarbageCollector
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class Application(QApplication):
     def __init__(self, argv):
         QApplication.__init__(self, argv)
         self._dependency_container = DependencyContainer()
+        self._garbage_collector = GarbageCollector(self)
 
         self._module_service = None
         self._message_board = None
