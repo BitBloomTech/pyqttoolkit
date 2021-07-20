@@ -81,7 +81,8 @@ class Application(QApplication):
         self._dependency_container.register_instance('tool_window_service', ToolWindowService(self._dependency_container))
         self._dependency_container.register_instance('event_registry', EventRegistry())
         self._dependency_container.register_instance('object_converter', ObjectConverter())
-    
+        self._dependency_container.register_instance('garbage_collector', self._garbage_collector)
+
     def _register_modules(self):
         modules = self._get_modules()
         for module_type in [v for k, v in modules.__dict__.items() if k.endswith('Module')]:

@@ -18,6 +18,7 @@
 The module service, creates and manages qt widget modules
 """
 from weakref import ref
+from functools import partial
 
 #pylint: disable=no-name-in-module
 from PyQt5.Qt import QObject, pyqtSlot
@@ -113,6 +114,9 @@ class ModuleService(QObject):
         window = ModuleWindow(self._theme_manager, id_)
         model = self._dependency_container.resolve(self._registered_modules[id_].model_type, {'parent': window})
         view = self._dependency_container.resolve(self._registered_modules[id_].view_type, {'parent': window})
+        if hasattr(model, 'handle_view_closed'):
+            garbage_collector = self._dependency_container.get_instance('garbage_collector')
+            view.destroyed.connect(partial(model.handle_view_closed, garbage_collector))
         window.setModuleView(view)
         view_manager = self._registered_modules[id_].view_manager_type(view, model)
 
