@@ -20,6 +20,7 @@ class EventTypes:
     importing_project = 'importing_project'
     save_requested = 'save_requested'
     close_project_requested = 'close_project_requested'
+    project_closed = 'project_closed'
 
 class FutureConnector:
     def __init__(self):
