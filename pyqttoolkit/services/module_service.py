@@ -112,7 +112,10 @@ class ModuleService(QObject):
 
     def _create_sub_module(self, id_):
         window = ModuleWindow(self._theme_manager, id_)
-        model = self._dependency_container.resolve(self._registered_modules[id_].model_type, {'parent': window})
+        model = self._dependency_container.resolve(
+            self._registered_modules[id_].model_type,
+            {'parent': window, 'module_id': id_}
+        )
         view = self._dependency_container.resolve(self._registered_modules[id_].view_type, {'parent': window})
         if hasattr(model, 'handle_view_closed'):
             garbage_collector = self._dependency_container.get_instance('garbage_collector')
