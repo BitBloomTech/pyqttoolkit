@@ -408,9 +408,17 @@ class MatPlotLibBase(QWidget):
         self._set_axes_limits()
         self.draw()
     
+    def _in_secondary_y_scroll_zone(self, event):
+        return self._in_interval(event.y, self._axes.bbox.intervaly) and \
+                event.x >= self._axes.bbox.intervalx[1]
+
+    def _in_secondary_x_scroll_zone(self, event):
+        return self._in_interval(event.x, self._axes.bbox.intervalx) and \
+                event.y >= self._axes.bbox.intervaly[1]
+
     def _handle_scroll_secondary(self, event):
         if self._has_secondary_y_extent():
-            in_secondary_y = self._in_interval(event.y, self._axes.bbox.intervaly) and event.x >= self._axes.bbox.intervalx[1]
+            in_secondary_y = self._in_secondary_y_scroll_zone(event)
             if in_secondary_y and event.button in ['up', 'down']:
                 self._secondary_y_extent = self._zoom(
                     *self._get_secondary_y_extent(),
@@ -418,7 +426,7 @@ class MatPlotLibBase(QWidget):
                     event.button
                 )
         if self._has_secondary_x_extent():
-            in_secondary_x = self._in_interval(event.x, self._axes.bbox.intervalx) and event.y >= self._axes.bbox.intervaly[1]
+            in_secondary_x = self._in_secondary_x_scroll_zone(event)
             if in_secondary_x and event.button in ['up', 'down']:
                 self._secondary_x_extent = self._zoom(
                     *self._get_secondary_x_extent(),
