@@ -22,4 +22,5 @@ class ModuleModel(QObject):
         QObject.__init__(self, parent)
 
     def handle_view_closed(self, garbage_collector, view):
+        self.deleteLater()
         garbage_collector.check()
