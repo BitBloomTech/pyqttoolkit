@@ -56,7 +56,7 @@ class ScriptStopped(Exception):
 class ScriptRunner:    
     def __init__(self, additional_paths=None, skip_empty_output_lines=False):
         self._disallowed_modules = [
-            r'sift', r'\binspect\b', r'\bimp\b', r'\bsys\b', r'\b\.', r'\bbuiltins\b'
+            r'\binspect\b', r'\bimp\b', r'\bsys\b', r'\b\.', r'\bbuiltins\b'
         ]
         self._disallowed_globals = [
             '_', 'quit', 'eval', 'exec', 'help'
