@@ -111,7 +111,7 @@ class ModuleService(QObject):
         return window
 
     def _create_sub_module(self, id_):
-        window = ModuleWindow(self._theme_manager, id_)
+        window = ModuleWindow(self._theme_manager, self._registered_modules[id_].title)
         model = self._dependency_container.resolve(
             self._registered_modules[id_].model_type,
             {'parent': window, 'module_id': id_}

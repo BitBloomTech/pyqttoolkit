@@ -33,6 +33,10 @@ class ModuleBase(QObject):
         return self._id
 
     @property
+    def title(self):
+        return self._id
+
+    @property
     def launcher_config(self):
         return self._launcher_config
     
