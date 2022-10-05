@@ -29,7 +29,8 @@ from matplotlib.legend import DraggableLegend
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
-from mpl_toolkits.axes_grid1 import Size, LocatableAxes, Divider
+from mpl_toolkits.axes_grid1 import Size, Divider
+from mpl_toolkits.axes_grid1.mpl_axes import Axes
 
 from pyqttoolkit.properties import AutoProperty, connect_all, bind
 from pyqttoolkit.models import SpanModel
@@ -90,7 +91,7 @@ class MatPlotLibBase(QWidget):
         h = [Size.Fixed(h_margin[0]), *h_axes, Size.Fixed(h_margin[1])]
         v = [Size.Fixed(v_margin[0]), *v_axes, Size.Fixed(v_margin[1])]
         self._divider = Divider(self._figure, (0.0, 0.0, 1.0, 1.0), h, v, aspect=False)
-        self._axes = LocatableAxes(self._figure, self._divider.get_position())
+        self._axes = Axes(self._figure, self._divider.get_position())
         self._axes.set_axes_locator(self._divider.new_locator(nx=nx_default, ny=ny_default))
         self._axes.set_zorder(2)
         self._axes.patch.set_visible(False)
@@ -852,15 +853,15 @@ class MatPlotLibBase(QWidget):
             self._cached_label_width_height = width, height
         return self._cached_label_width_height
 
-    def _create_new_axes(self, nx=1, ny=1) -> LocatableAxes:
-        axes = LocatableAxes(self._figure, self._divider.get_position())
+    def _create_new_axes(self, nx=1, ny=1) -> Axes:
+        axes = Axes(self._figure, self._divider.get_position())
         axes.set_axes_locator(self._divider.new_locator(nx=nx, ny=ny))
         self._figure.add_axes(axes)
         return axes
     
     @staticmethod
     def _create_secondary_xy_axes(figure, divider, nx=1, ny=1, visible=False, z_order=1):
-        axes = LocatableAxes(figure, divider.get_position())
+        axes = Axes(figure, divider.get_position())
         axes.set_axes_locator(divider.new_locator(nx=nx, ny=ny))
         axes.xaxis.tick_top()
         axes.xaxis.set_label_position('top')
@@ -875,7 +876,7 @@ class MatPlotLibBase(QWidget):
 
     @staticmethod
     def _create_shared_axes(figure, divider, shared_axes, nx=1, ny=1, visible=False, z_order=1):
-        axes = LocatableAxes(figure, divider.get_position(), sharex=shared_axes, sharey=shared_axes, frameon=False)
+        axes = Axes(figure, divider.get_position(), sharex=shared_axes, sharey=shared_axes, frameon=False)
         axes.set_axes_locator(divider.new_locator(nx=nx, ny=ny))
         for spine in axes.spines.values():
             spine.set_visible(False)
