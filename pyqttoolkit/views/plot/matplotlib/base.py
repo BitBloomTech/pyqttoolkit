@@ -59,7 +59,6 @@ class _SpanSeletor(SpanSelector):
         SpanSelector._release(self, event)
         if self.rect.get_width() < self._min_span:
             self.rect.set_visible(False)
-            self.stay_rect.set_visible(False)
             if self._select_none_handler is not None:
                 self._select_none_handler()
     
@@ -665,11 +664,11 @@ class MatPlotLibBase(QWidget):
             if self._span.active and not active:
                 self._previous_span = self.span
                 self.span = None
-                for r in [self._span.rect, self._span.stay_rect]:
+                for r in [self._span.rect]:
                     self._remove_artist(r)
             elif not self._span.active and active:
                 self.span = self._previous_span
-                for r in [self._span.rect, self._span.stay_rect]:
+                for r in [self._span.rect]:
                     self._add_artist(r)
             self._span.active = active
             self.draw()
