@@ -60,17 +60,11 @@ class MatPlotColorbar(MatPlotLibBase):
         self._position = position
 
     def _plot_colorbar(self, label):
-        if self._cbar is None:
-            self._cbar = self._figure.colorbar(self._points, self._colorbar_axes, orientation='horizontal' if
-                                               _is_horizontal(self._position) else 'vertical')
-            self._cbar.set_label(label)
-        else:
-            self._cbar.update_bruteforce(self._points)
-            self._cbar.set_label(label)
-
-    def _clear_colorbar(self):
-        for a in self._colorbar_axes.collections:
-            a.remove()
+        if self._cbar is not None:
+            self._colorbar_axes.clear()
+        self._cbar = self._figure.colorbar(self._points, self._colorbar_axes, orientation='horizontal' if
+                                           _is_horizontal(self._position) else 'vertical')
+        self._cbar.set_label(label)
 
     @property
     def colorbar(self):
