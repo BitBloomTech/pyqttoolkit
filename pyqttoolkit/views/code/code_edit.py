@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+import weakref
 from PyQt5.Qt import (
     Qt, QWidget, QGridLayout, QPlainTextEdit, QColor,
     QPalette, pyqtSignal, QFont, QTextOption, QSplitter,
@@ -208,8 +209,11 @@ class CodeEdit(QWidget):
         return _
 
     def _handle_text_changed(self, model):
+        model_ref = weakref.ref(model)
         def _setter(value):
-            model.text = value
+            model_inst = model_ref()
+            if model_inst:
+                model_inst.text = value
         return _setter
 
     def _handle_validation_message(self, message):

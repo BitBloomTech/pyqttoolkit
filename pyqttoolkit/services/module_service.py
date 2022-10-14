@@ -117,9 +117,6 @@ class ModuleService(QObject):
             {'parent': window, 'module_id': id_}
         )
         view = self._dependency_container.resolve(self._registered_modules[id_].view_type, {'parent': window})
-        if hasattr(model, 'handle_view_closed'):
-            garbage_collector = self._dependency_container.get_instance('garbage_collector')
-            view.destroyed.connect(partial(model.handle_view_closed, garbage_collector))
         window.setModuleView(view)
         view_manager = self._registered_modules[id_].view_manager_type(view, model)
 

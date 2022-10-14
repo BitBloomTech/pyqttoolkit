@@ -34,7 +34,7 @@ class GarbageCollector(QObject):
     thread, as otherwise Qt can crash.
     '''
 
-    def __init__(self, parent, interval=10000):
+    def __init__(self, parent, interval=60000):
         QObject.__init__(self, parent)
         self._interval = interval
 

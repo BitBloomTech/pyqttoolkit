@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+import weakref
 from PyQt5.QtCore import pyqtSignal, QItemSelectionModel
 from PyQt5.Qt import QWidget, QGridLayout, QAbstractItemModel, QStringListModel, Qt
 #pylint: enable=no-name-in-module
@@ -27,7 +28,7 @@ class BulkValueSelectorWidget(QWidget):
         QWidget.__init__(self, parent)
         self._value_selector = ListView(self)
         self._value_selector.setSelectionMode(ListView.ExtendedSelection)
-        self._value_selector.selectedItemsChanged.connect(lambda: self.selectedValuesChanged.emit(self.selectedValues))
+        self._value_selector.selectedItemsChanged.connect(self._handle_selected_items_changed)
 
         self._layout = QGridLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
@@ -37,6 +38,14 @@ class BulkValueSelectorWidget(QWidget):
     valuesChanged = pyqtSignal(QAbstractItemModel)
     selectedValuesChanged = pyqtSignal(list)
     dataCommitted = pyqtSignal(list)
+
+    def _handle_selected_items_changed(self):
+        widget_ref = weakref.ref(self)
+        def _():
+            widget = widget_ref()
+            if widget:
+                widget.selectedValuesChanged.emit(widget.selectedValues)
+        return _
 
     @auto_property(QAbstractItemModel)
     def values(self):
