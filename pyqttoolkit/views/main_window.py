@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
         self.style().drawPrimitive(QStyle.PE_Widget, self._opt, self._painter, self)
         self._painter.end()
         return super().paintEvent(_event)
-    
+
     @property
     def themeManager(self):
         return self._theme_manager

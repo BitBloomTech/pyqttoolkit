@@ -20,7 +20,7 @@ The module service, creates and manages qt widget modules
 from weakref import ref
 import weakref
 
-from PyQt5.QtCore import QObject, pyqtSlot, Qt
+from PyQt5.QtCore import QObject, pyqtSlot, QTimer, Qt
 
 from pyqttoolkit.modules import Module, CommandModule
 from pyqttoolkit.views import ModuleWindow
@@ -75,11 +75,12 @@ class ModuleService(QObject):
             self._module_opened(name)
             return result
         return None
-    
+
     def closeModules(self):
         for id_, window in list(self._windows.items()):
-            if id_ != 'root':
-                window.close()
+            if id_ != 'root' and not window.forceClose():
+                return False
+        return True
             
     def modules(self):
         return self._registered_modules
@@ -112,7 +113,8 @@ class ModuleService(QObject):
         return window
 
     def _create_sub_module(self, id_):
-        window = ModuleWindow(self._theme_manager, self._registered_modules[id_].title)
+        singleton = self._registered_modules[id_].singleton
+        window = ModuleWindow(self._theme_manager, self._registered_modules[id_].title, singleton)
         window.setAttribute(Qt.WA_DeleteOnClose)
         model = self._dependency_container.resolve(
             self._registered_modules[id_].model_type,
@@ -135,7 +137,11 @@ class ModuleService(QObject):
         self._view_managers.pop(module_id)
         window = self._windows.pop(module_id)
         self._models.pop(module_id)
-        # window.destroyed.connect(self._gc)
-        self._garbage_collector.check(full=True)
+        window.deleteLater()
+        window.destroyed.connect(self._schedule_gc)
     
-    # def _gc(self):
+    def _schedule_gc(self):
+        QTimer.singleShot(0, self._gc)
+    
+    def _gc(self):
+        self._garbage_collector.check(full=True)

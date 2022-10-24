@@ -53,14 +53,6 @@ class Application(QApplication):
         self.mainWindowLoaded.emit(self._module_service.openModule('Base'))
         return self.exec_()
     
-    def notify(self, receiver, event):
-        try:
-            return super().notify(receiver, event)
-        #pylint: disable=broad-except
-        except Exception as e:
-            self._handle_exception(type(e), e, e.__traceback__)
-            return True
-    
     def _handle_exception(self, ex_type, ex_value, traceback_obj):
         LOGGER.error('Application Exception: %s, %s', ex_type, ex_value)
         if self._handling_exception:
