@@ -15,9 +15,8 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QMainWindow, QStyleOption, QPainter, QStyle
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QMainWindow, QStyleOption, QStyle
+from PyQt5.QtGui import QPainter
 
 from pyqttoolkit.colors import format_color
 
@@ -26,13 +25,16 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self, parent)
         self._theme_manager = theme_manager
         self.setStyleSheet(self._get_stylesheet())
+        self._painter = None
+        self._opt = QStyleOption()
     
     def paintEvent(self, _event):
-        opt = QStyleOption()
-        opt.initFrom(self)
-        painter = QPainter(self)
-        self.style().drawPrimitive(QStyle.PE_Widget, opt, painter, self)
-    
+        self._opt.initFrom(self)
+        self._painter = QPainter(self)
+        self.style().drawPrimitive(QStyle.PE_Widget, self._opt, self._painter, self)
+        self._painter.end()
+        return super().paintEvent(_event)
+
     @property
     def themeManager(self):
         return self._theme_manager

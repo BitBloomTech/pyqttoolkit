@@ -17,9 +17,7 @@
 import gc
 import logging
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QObject, QTimer
-#pyline: enable=no-name-in-module
+from PyQt5.QtCore import QObject, QTimer
 
 from pyqttoolkit.logs import TRACE
 
@@ -34,27 +32,29 @@ class GarbageCollector(QObject):
     thread, as otherwise Qt can crash.
     '''
 
-    def __init__(self, parent, interval=10000):
-        QObject.__init__(self, parent)
+    def __init__(self, parent, interval=60000):
+        super().__init__(parent)
         self._interval = interval
-
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self.check)
-
         self._threshold = gc.get_threshold()
         gc.disable()
-        self._timer.start(self._interval)
 
-    def check(self):
+        if self._interval:
+            self._timer = QTimer(self)
+            self._timer.timeout.connect(self.check)
+            self._timer.start(self._interval)
+        else:
+            self._timer = None
+
+    def check(self, full=False):
         l0, l1, l2 = gc.get_count()
         LOGGER.log(TRACE, 'gc_check called: l0=%d, l1=%d, l2=%d', l0, l1, l2)
-        if l0 > self._threshold[0]:
+        if full or l0 > self._threshold[0]:
             num = gc.collect(0)
             LOGGER.log(TRACE, 'Collecting gen 0, found: %d unreachable', num)
-            if l1 > self._threshold[1]:
+            if full or l1 > self._threshold[1]:
                 num = gc.collect(1)
                 LOGGER.log(TRACE, 'Collecting gen 1, found: %d unreachable', num)
-                if l2 > self._threshold[2]:
+                if full or l2 > self._threshold[2]:
                     num = gc.collect(2)
                     LOGGER.log(TRACE, 'Collecting gen 2, found: %d unreachable', num)
 

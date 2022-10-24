@@ -20,9 +20,8 @@ Defines the ProjectUpdater class, which enables the project to be updated
 import inspect
 from threading import Lock
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QObject, pyqtSignal, QTimer, QCoreApplication, QEvent, QSemaphore, QThread
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QObject, pyqtSignal, QEvent, QSemaphore, QThread
+from PyQt5.QtWidgets import QApplication
 
 def _check_attribute(name, fields, project):
     if not name in fields:
@@ -82,7 +81,7 @@ class UpdateEvent(QEvent):
         self._updater = updater
         self._result = None
         self._semaphore = QSemaphore(1)
-        if QCoreApplication.instance().thread() != QThread.currentThread():
+        if QApplication.instance().thread() != QThread.currentThread():
             self._semaphore.acquire()
     
     def exec(self):
@@ -131,10 +130,10 @@ class ProjectUpdater(QObject):
         else:
             self._on_project_updated(None)
         if on_completed:
-            QCoreApplication.postEvent(self, UpdateCompleteEvent(on_completed, result))
+            QApplication.postEvent(self, UpdateCompleteEvent(on_completed, result))
     
     def _on_project_updated(self, prop):
-        QCoreApplication.postEvent(self, PropertyUpdatedEvent(prop))
+        QApplication.postEvent(self, PropertyUpdatedEvent(prop))
     
     def event(self, event):
         if isinstance(event, PropertyUpdatedEvent):

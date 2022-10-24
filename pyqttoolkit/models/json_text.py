@@ -16,9 +16,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from json import loads, dumps, JSONDecodeError
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QObject, pyqtSignal
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QObject, pyqtSignal
 
 from pyqttoolkit.properties import AutoProperty
 

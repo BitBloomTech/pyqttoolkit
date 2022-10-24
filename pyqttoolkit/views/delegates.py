@@ -16,12 +16,11 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from enum import Enum
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QStyledItemDelegate, QTableView, QTreeView, QStringListModel, QStyle, QStyleOptionViewItem, QWidget, QHBoxLayout, QPushButton, QPoint, Qt, QDateTime
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QStringListModel, Qt, QDateTime
+from PyQt5.QtWidgets import QStyledItemDelegate, QTableView, QWidget, QHBoxLayout, QPushButton
 
 from pyqttoolkit.models.roles import DataRole, EditorAuxDataRole
-from pyqttoolkit.views import BindableComboBox, DateTimeEdit, BulkValueSelectorWidget, Popup, make_styleable
+from pyqttoolkit.views import BindableComboBox, DateTimeEdit, BulkValueSelectorWidget, Popup
 
 class ComboBoxItemDelegate(QStyledItemDelegate):
     def __init__(self, parent):

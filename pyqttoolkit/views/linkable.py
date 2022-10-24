@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QWidget
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QWidget
 
 class LinkableWidget(QWidget):
     def __init__(self, parent, link_manager=None, link_type=None):

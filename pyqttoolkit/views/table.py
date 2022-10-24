@@ -17,9 +17,9 @@
 """:mod:`synthesis`
 Defines the SynthesisView class
 """
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QTableView, QKeySequence, QApplication, QMenu, QAction, Qt, QModelIndex, QSortFilterProxyModel
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import Qt, QModelIndex, QSortFilterProxyModel
+from PyQt5.QtWidgets import QTableView, QApplication, QMenu, QAction
+from PyQt5.QtGui import QKeySequence
 
 from pyqttoolkit.models.roles import RowSpanRole, ColumnSpanRole
 

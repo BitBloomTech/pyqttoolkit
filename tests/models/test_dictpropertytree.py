@@ -1,7 +1,7 @@
 from enum import Enum
 import pytest
 #pylint: disable=no-name-in-module
-from PyQt5.Qt import Qt, QAbstractItemModel, pyqtSignal, QModelIndex, QVariant
+from PyQt5.QtCore import QModelIndex
 #pylint: enable=no-name-in-module
 
 from pyqttoolkit.models import DictPropertyTreeModel

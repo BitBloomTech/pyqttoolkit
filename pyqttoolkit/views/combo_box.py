@@ -19,11 +19,8 @@ Defines the ComboBox class
 """
 from enum import Enum
 
-#pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QComboBox
-from PyQt5.Qt import pyqtSignal
-from PyQt5.QtCore import Qt
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import Qt, pyqtSignal
 
 from pyqttoolkit.properties import AutoProperty
 from pyqttoolkit.models.roles import DataRole

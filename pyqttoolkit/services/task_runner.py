@@ -20,10 +20,8 @@ Defines the task runner
 import logging
 import inspect
 
-#pylint: disable=no-name-in-module
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-from PyQt5.Qt import QThreadPool, QRunnable, QThread, QSemaphore, QEvent, QCoreApplication
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QObject, pyqtSignal, QEvent
+from PyQt5.QtWidgets import QApplication
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -89,17 +87,17 @@ class Worker:
     
     def run(self):
         if self._busy_args:
-            QCoreApplication.postEvent(self._task_runner, BusyEvent(self._busy_args))
+            QApplication.postEvent(self._task_runner, BusyEvent(self._busy_args))
         try:
             result = self._f(*self._args.args, **self._args.kwargs)
         except TaskCancelled:
-            QCoreApplication.postEvent(self._task_runner, CancelledEvent(self._on_cancelled))
+            QApplication.postEvent(self._task_runner, CancelledEvent(self._on_cancelled))
         #pylint: disable=broad-except
         except Exception as e:
-            QCoreApplication.postEvent(self._task_runner, ErrorEvent(e, self._on_error, self._error_description))
+            QApplication.postEvent(self._task_runner, ErrorEvent(e, self._on_error, self._error_description))
         #pylint: enable=broad-except
         else:
-            QCoreApplication.postEvent(self._task_runner, ResultEvent(result, self._on_completed))
+            QApplication.postEvent(self._task_runner, ResultEvent(result, self._on_completed))
 
 class ProgressUpdatedEvent(QEvent):
     def __init__(self, progress, message):
@@ -178,7 +176,7 @@ class TaskRunner(QObject):
     def __init__(self, parent):
         QObject.__init__(self, parent)
         self._is_cancelled = False
-        self._executor = ThreadPoolExecutor(max_workers=1)
+        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='TaskRunner_Thread')
 
     def run_task(self, task_function, task_args=None, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, show_progress=True, cancellable=False, **kwargs):
         """function::runTask(self, task_function, task_args, on_completed, on_error)
@@ -211,7 +209,7 @@ class TaskRunner(QObject):
         self._executor.submit(worker.run)
     
     def update_progress(self, percent, message):
-        QCoreApplication.postEvent(self, ProgressUpdatedEvent(float(percent), message))
+        QApplication.postEvent(self, ProgressUpdatedEvent(float(percent), message))
     
     def event(self, event):
         if isinstance(event, ProgressUpdatedEvent):

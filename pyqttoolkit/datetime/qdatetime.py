@@ -19,9 +19,7 @@ from .datetime import round_timedelta
 
 import pandas as pd
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QDateTime, QDate, QTime
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QDateTime, QDate, QTime
 
 def q_datetime_to_datetime(q_datetime: QDateTime):
     if q_datetime is None or not q_datetime.isValid():
