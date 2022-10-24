@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QTextEdit, pyqtSignal, QFont
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QTextEdit
+from PyQt5.QtGui import QFont
 
 class TextEdit(QTextEdit):
     def __init__(self, parent):

@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QDialog, QDialogButtonBox, QGridLayout
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QGridLayout
 
 class ToolWindow(QDialog):
     def __init__(self, parent, view, name, show_buttons=True):

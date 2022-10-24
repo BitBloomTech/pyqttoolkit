@@ -14,10 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.Qt import QWidget, Qt, QSize
+from PyQt5.QtCore import pyqtSignal, Qt, QSize
+from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QVBoxLayout
-#pylint: enable=no-name-in-module
 
 from pyqttoolkit.views import IconButton, make_styleable
 from .tool_type import ToolType

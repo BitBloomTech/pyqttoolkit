@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from .lines import HLine, VLine
-from .group_panel import GroupPanelLayout, VGroupPanelLayout, HGroupPanelLayout
+from .group_panel import GroupPanelLayout, VGroupPanelLayout, HGroupPanelLayout, GroupPanelWidget, HGroupPanelWidget, VGroupPanelWidget
 from .group_box import wrap_in_group_box, wrap_many_in_group_box
 from .collabsible import HCollapsibleLayout, VCollapsibleLayout
 from .link import LinkWidget

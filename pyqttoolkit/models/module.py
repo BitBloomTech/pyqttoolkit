@@ -20,3 +20,7 @@ from PyQt5.QtCore import QObject
 class ModuleModel(QObject):
     def __init__(self, parent):
         QObject.__init__(self, parent)
+
+    def handle_view_closed(self, garbage_collector, view):
+        self.deleteLater()
+        garbage_collector.check()

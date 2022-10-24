@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QObject, pyqtSignal
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QObject, pyqtSignal
 
 from .events import ModuleOpeningEvent
 
@@ -24,6 +23,8 @@ class ModuleBase(QObject):
         QObject.__init__(self)
         self._id = id_
         self._launcher_config = launcher_config
+        if self._launcher_config:
+            self._launcher_config.setParent(self)
     
     opening = pyqtSignal(ModuleOpeningEvent)
     opened = pyqtSignal()

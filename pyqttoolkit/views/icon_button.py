@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QPushButton, QHBoxLayout, QSizePolicy, QPropertyAnimation, pyqtProperty, QEasingCurve, pyqtSignal
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QPropertyAnimation, QEasingCurve, pyqtSignal, pyqtProperty
+from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QSizePolicy
 
 from pyqttoolkit.properties import AutoProperty
 from pyqttoolkit.colors import format_color, ColorFormat
@@ -40,7 +40,7 @@ class IconButton(QPushButton):
         self._background_opacity = 0.0
         self._background_opacity_stop = 0.0
         self._update_style_sheet()
-        self._animation = QPropertyAnimation(self, b'backgroundOpacity')
+        self._animation = QPropertyAnimation(self, b'backgroundOpacity', self)
         self.clicked.connect(self._update_background_opacity_stop)
     
     def setColor(self, color=None):

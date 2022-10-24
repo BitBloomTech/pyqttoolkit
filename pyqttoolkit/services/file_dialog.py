@@ -16,9 +16,8 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from os import path
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QStandardPaths, QFileDialog
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QStandardPaths
+from PyQt5.QtWidgets import QFileDialog
 
 class FileDialogService:
     def __init__(self, project_manager, application_configuration):

@@ -15,9 +15,8 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 import weakref
-from PyQt5.QtCore import pyqtSignal, QItemSelectionModel
-from PyQt5.Qt import QWidget, QGridLayout, QAbstractItemModel, QStringListModel, Qt
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal, QItemSelectionModel, QAbstractItemModel, QStringListModel, Qt
+from PyQt5.QtWidgets import QWidget, QGridLayout
 
 from pyqttoolkit.properties import auto_property
 from pyqttoolkit.models.roles import DataRole

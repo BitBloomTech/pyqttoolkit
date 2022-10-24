@@ -19,9 +19,8 @@ Defines the DateTimeEdit class
 """
 from enum import Enum
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QDateTimeEdit, QDateTime, QTime, pyqtSignal
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QDateTime, QTime, pyqtSignal
+from PyQt5.QtWidgets import QDateTimeEdit
 
 from pyqttoolkit.properties import auto_property, AutoProperty
 

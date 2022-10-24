@@ -15,20 +15,21 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from PyQt5.QtCore import Qt
-from PyQt5.Qt import QLayout, QBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePolicy
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePolicy
 
 from .lines import HLine, VLine
 from .link import LinkWidget
 
-class GroupPanelLayout(QLayout):
+class GroupPanelLayout(QBoxLayout):
     def __init__(self, parent, direction):
-        QLayout.__init__(self, parent)
-        self._inner = QBoxLayout(direction)
+        super().__init__(direction, parent)
         self._direction = direction
         self._separator = VLine if not self.isVertical() else HLine
-        self._item_count = 0
         self._grid_layouts = []
+        self._containers = []
+        self._separators = []
+        self._layouts = []
+        self._labels = []
         self._minimum_row_height = 0
         self._spacing = 0
         self._label_alignment = Qt.AlignCenter
@@ -36,18 +37,18 @@ class GroupPanelLayout(QLayout):
         self._group_alignment = None
     
     def addWidget(self, widget, group_name):
-        if self._item_count > 0:
+        if self._containers:
             self.addSeparator()
         container = LinkWidget(self.parent(), widget)
         layout = QVBoxLayout(container)
         layout.setDirection(self._panel_direction)
         layout.setContentsMargins(self._spacing, self._spacing, self._spacing, self._spacing)
-        self.addLabel(layout, group_name)
+        self.addLabel(container, layout, group_name)
         layout.addWidget(widget)
-        container.setLayout(layout)
         group_alignment = self._group_alignment if self._group_alignment is not None else Qt.Alignment(0)
-        self._inner.addWidget(container, alignment=group_alignment)
-        self._item_count += 1
+        self._containers.append(container)
+        self._layouts.append(layout)
+        super().addWidget(container, alignment=group_alignment)
 
     def setLabelAlignment(self, alignment):
         self._label_alignment = alignment
@@ -62,53 +63,126 @@ class GroupPanelLayout(QLayout):
         return self._direction in (QBoxLayout.TopToBottom, QBoxLayout.BottomToTop)
     
     def addSeparator(self):
-        self._inner.addWidget(self._separator(self.parent()))
+        self._separators.append(self._separator(self.parent()))
+        super().addWidget(self._separators[-1])
     
-    def addLabel(self, layout, name):
-        label = QLabel(name)
+    def addLabel(self, parent, layout, name):
+        label = QLabel(name, parent)
         label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(label, alignment=self._label_alignment)
+        self._labels.append(label)
     
     def addStretch(self, stretch):
-        self._inner.addStretch(stretch)
+        super().addStretch(stretch)
 
     def setContentsMargins(self, left, top, right, bottom):
-        self._inner.setContentsMargins(left, top, right, bottom)
+        super().setContentsMargins(left, top, right, bottom)
     
     def setSpacing(self, spacing):
         self._spacing = spacing
 
     def count(self):
-        return self._inner.count()
+        return super().count()
     
     def sizeHint(self):
-        return self._inner.sizeHint()
+        return super().sizeHint()
     
     def setGeometry(self, rect):
-        self._inner.setGeometry(rect)
+        super().setGeometry(rect)
     
     def itemAt(self, index):
-        return self._inner.itemAt(index)
+        return super().itemAt(index)
     
     def takeAt(self, index):
-        return self._inner.takeAt(index)
+        return super().takeAt(index)
     
     def minimumSize(self):
-        return self._inner.minimumSize()
+        return super().minimumSize()
     
     def hasHeightForWidth(self):
-        return self._inner.hasHeightForWidth()
+        return super().hasHeightForWidth()
     
     def heightForWidth(self, width):
-        return self._inner.heightForWidth(width)
+        return super().heightForWidth(width)
     
     def update(self):
-        return self._inner.update()
+        return super().update()
 
 class HGroupPanelLayout(GroupPanelLayout):
     def __init__(self, parent):
-        GroupPanelLayout.__init__(self, parent, QBoxLayout.LeftToRight)
+        super().__init__(parent, QBoxLayout.LeftToRight)
 
 class VGroupPanelLayout(GroupPanelLayout):
     def __init__(self, parent):
-        GroupPanelLayout.__init__(self, parent, QBoxLayout.TopToBottom)
+        super().__init__(parent, QBoxLayout.TopToBottom)
+
+class GroupPanelWidget(QWidget):
+    def __init__(self, parent, direction):
+        super().__init__(parent)
+        self._layout = QBoxLayout(direction, self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._direction = direction
+        self._separator = VLine if direction == QBoxLayout.LeftToRight else HLine
+        self._grid_layouts = []
+        self._containers = []
+        self._separators = []
+        self._layouts = []
+        self._labels = []
+        self._minimum_row_height = 0
+        self._spacing = 0
+        self._label_alignment = Qt.AlignCenter
+        self._panel_direction = QBoxLayout.TopToBottom
+        self._group_alignment = None
+    
+    def addWidget(self, widget, group_name):
+        if self._containers:
+            self.addSeparator()
+        container = LinkWidget(self, widget)
+        layout = QVBoxLayout(container)
+        layout.setDirection(self._panel_direction)
+        layout.setContentsMargins(self._spacing, self._spacing, self._spacing, self._spacing)
+        self.addLabel(container, layout, group_name)
+        layout.addWidget(widget)
+        group_alignment = self._group_alignment if self._group_alignment is not None else Qt.Alignment(0)
+        self._containers.append(container)
+        self._layouts.append(layout)
+        self._layout.addWidget(container, alignment=group_alignment)
+
+    def setLabelAlignment(self, alignment):
+        self._label_alignment = alignment
+
+    def setPanelDirection(self, direction):
+        self._panel_direction = direction
+    
+    def setGroupAlignment(self, alignment):
+        self._group_alignment = alignment
+    
+    def isVertical(self):
+        return self._direction in (QBoxLayout.TopToBottom, QBoxLayout.BottomToTop)
+    
+    def addSeparator(self):
+        self._separators.append(self._separator(self))
+        self._layout.addWidget(self._separators[-1])
+    
+    def addLabel(self, parent, layout, name):
+        label = QLabel(name, parent)
+        label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(label, alignment=self._label_alignment)
+        self._labels.append(label)
+    
+    def addStretch(self, stretch):
+        self._layout.addStretch(stretch)
+
+    def setContentsMargins(self, left, top, right, bottom):
+        self._layout.setContentsMargins(left, top, right, bottom)
+    
+    def setSpacing(self, spacing):
+        self._spacing = spacing
+
+class HGroupPanelWidget(GroupPanelWidget):
+    def __init__(self, parent):
+        super().__init__(parent, QBoxLayout.LeftToRight)
+
+class VGroupPanelWidget(GroupPanelWidget):
+    def __init__(self, parent):
+        super().__init__(parent, QBoxLayout.TopToBottom)

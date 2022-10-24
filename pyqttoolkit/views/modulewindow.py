@@ -19,9 +19,7 @@ Module window widget
 """
 from uuid import uuid4
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import pyqtSignal
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal
 
 from pyqttoolkit.modules.events import RejectableEvent
 

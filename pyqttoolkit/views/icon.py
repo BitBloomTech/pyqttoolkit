@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QFile, QHBoxLayout, QSize, Qt, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QWidget
+from PyQt5.QtCore import QFile, QSize, Qt
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtXml import QDomDocument
-#pylint: enable=no-name-in-module
 
 from pyqttoolkit.colors import format_color, ColorFormat
 from pyqttoolkit.services.theme_manager import ThemeManager
@@ -33,7 +33,6 @@ class Icon(QWidget):
 
         self._svgdoc = QDomDocument()
         self._icon_widget = QSvgWidget(self)
-
         self.loadIcon(icon)
 
         if size:
@@ -44,12 +43,14 @@ class Icon(QWidget):
         self._layout.addWidget(self._icon_widget, Qt.AlignCenter)
     
     def loadIcon(self, icon):
-        file = QFile(f'icons:{icon}')
-        file.open(QFile.ReadOnly)
-        self._svgdoc.setContent(file.readAll())
-        self._svgdoc.documentElement().setAttribute('fill', self._color)
-        file.close()
-        self._icon_widget.load(self._svgdoc.toByteArray())
+        file = QFile(f'icons:{icon}', self)
+        try:
+            file.open(QFile.ReadOnly)
+            self._svgdoc.setContent(file.readAll())
+            self._svgdoc.documentElement().setAttribute('fill', self._color)
+            self._icon_widget.load(self._svgdoc.toByteArray())
+        finally:
+            file.close()
 
     def setEnabled(self, enabled):
         QWidget.setEnabled(self, enabled)
@@ -58,7 +59,7 @@ class Icon(QWidget):
         self._icon_widget.load(self._svgdoc.toByteArray())
     
     def setColor(self, color=None):
-        color = format_color(color or self._theme_manager.get_color('button_foreground'), ColorFormat.rgb_string_256) or self._color
+        self._color = format_color(color or self._theme_manager.get_color('button_foreground'), ColorFormat.rgb_string_256) or self._color
         self._svgdoc.documentElement().setAttribute('fill', color)
         self._svgdoc.documentElement().setAttribute('fill-opacity', '1' if self.isEnabled() else '0.4')
         self._icon_widget.load(self._svgdoc.toByteArray())

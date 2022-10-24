@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QGroupBox, QGridLayout, Qt, QVBoxLayout
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QGroupBox, QGridLayout, QVBoxLayout
+from PyQt5.QtCore import Qt
 
 class LinkGroupBox(QGroupBox):
     def __init__(self, name, parent, linkable_widget):
