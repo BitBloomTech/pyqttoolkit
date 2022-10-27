@@ -27,7 +27,7 @@ class BulkValueSelectorWidget(QWidget):
         QWidget.__init__(self, parent)
         self._value_selector = ListView(self)
         self._value_selector.setSelectionMode(ListView.ExtendedSelection)
-        self._value_selector.selectedItemsChanged.connect(self._handle_selected_items_changed)
+        self._value_selector.selectedItemsChanged.connect(self._handle_selected_items_changed())
 
         self._layout = QGridLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
