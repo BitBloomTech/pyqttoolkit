@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QWidget, QGridLayout, Qt, QSizePolicy, QVBoxLayout
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QWidget, QGridLayout, QSizePolicy, QVBoxLayout
+from PyQt5.QtCore import Qt
 
 from pyqttoolkit.views import PopoutWidget, make_styleable
 from pyqttoolkit.colors import interpolate_rgb, format_color, ColorFormat

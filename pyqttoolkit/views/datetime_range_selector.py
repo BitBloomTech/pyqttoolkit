@@ -17,11 +17,8 @@
 """:mod:`datetime_range_selector`
 Defines the DatetimeRangeSelectorWidget
 """
-#pylint: disable=no-name-in-module
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.Qt import QDateTime, QSize, QMenu, QAction
-from PyQt5.QtWidgets import QGridLayout, QSizePolicy
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal, QDateTime, QSize
+from PyQt5.QtWidgets import QGridLayout, QSizePolicy, QMenu, QAction
 
 from datetime import timedelta
 

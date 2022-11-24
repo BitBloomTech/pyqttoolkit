@@ -14,14 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import (
-    Qt, QWidget, QGridLayout, QPlainTextEdit, QColor,
-    QPalette, pyqtSignal, QFont, QTextOption, QSplitter,
-    QTextBrowser, QLabel, QSize, QRect, QPainter,
-    QFontMetrics, QPointF, QTextEdit, QTextFormat,
-    QEvent
+import weakref
+from PyQt5.QtCore import Qt, pyqtSignal, QSize, QRect
+from PyQt5.QtWidgets import (
+    QWidget, QGridLayout, QPlainTextEdit,
+    QSplitter, QTextBrowser,
+    QLabel, QTextEdit
 )
-#pylint: enable=no-name-in-module
+from PyQt5.QtGui import (
+    QPainter, QColor, QPalette, QFont,
+    QTextOption, QFontMetrics, QTextFormat
+)
 
 from .python_syntax import PythonHighlighter
 
@@ -155,7 +158,7 @@ class CodeEdit(QWidget):
         self._output_pane_container = QWidget(self)
         self._output_pane_layout = QGridLayout(self._output_pane_container)
         self._output_pane_layout.setContentsMargins(0, 16, 0, 0)
-        self._output_pane_layout.addWidget(QLabel(self.tr('Script Output')), 0, 0)
+        self._output_pane_layout.addWidget(QLabel(self.tr('Script Output'), self), 0, 0)
         self._output_pane_layout.addWidget(self._output_pane)
 
         self._splitter = QSplitter(Qt.Vertical, self)
@@ -200,16 +203,22 @@ class CodeEdit(QWidget):
         model.validationMessageChanged.connect(self._handle_validation_message)
     
     def _set_text(self, widget, scroll_to_end=False):
+        widget_ref = weakref.ref(widget)
         def _(text):
-            if widget.toPlainText() != text:
-                widget.setPlainText(text)
-                if scroll_to_end:
-                    widget.verticalScrollBar().setSliderPosition(widget.verticalScrollBar().maximum())
+            widget_inst = widget_ref()
+            if widget_inst:
+                if widget_inst.toPlainText() != text:
+                    widget_inst.setPlainText(text)
+                    if scroll_to_end:
+                        widget_inst.verticalScrollBar().setSliderPosition(widget_inst.verticalScrollBar().maximum())
         return _
 
     def _handle_text_changed(self, model):
+        model_ref = weakref.ref(model)
         def _setter(value):
-            model.text = value
+            model_inst = model_ref()
+            if model_inst:
+                model_inst.text = value
         return _setter
 
     def _handle_validation_message(self, message):

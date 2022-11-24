@@ -14,23 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.Qt import QStyleOption, QStyle, QPainter
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QStyleOption, QStyle
+from PyQt5.QtGui import QPainter
 
-def _get_paintEvent(cls):
-    def _paintEvent(self, event):
-        opt = QStyleOption()
-        opt.initFrom(self)
-        painter = QPainter(self)
-        self.style().drawPrimitive(QStyle.PE_Widget, opt, painter, self)
-        return cls.paintEvent(self, event)
-    return _paintEvent
+opt = QStyleOption()
 
 def make_styleable(cls):
-    return type(
-        cls.__name__,
-        (cls,),
-        {
-            'paintEvent': _get_paintEvent(cls)
-        }
-    )
+    global opt
+    class Styleable(cls):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._painter = None
+        
+        def paintEvent(self, event):
+            self._painter = QPainter(self)
+            opt.initFrom(self)
+            self.style().drawPrimitive(QStyle.PE_Widget, opt, self._painter, self)
+            self._painter.end()
+            return super().paintEvent(event)
+
+    return Styleable
+

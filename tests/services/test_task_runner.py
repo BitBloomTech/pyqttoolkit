@@ -3,9 +3,7 @@ import time
 
 from asyncio import Event, wait_for
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QApplication, QThread
-#pyline: enable=no-name-in-module
+from PyQt5.QtWidgets import QApplication
 
 from pyqttoolkit.services.task_runner import *
 from pytestqt.exceptions import capture_exceptions

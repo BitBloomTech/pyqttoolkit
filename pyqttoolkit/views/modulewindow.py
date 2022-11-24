@@ -19,9 +19,7 @@ Module window widget
 """
 from uuid import uuid4
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import pyqtSignal
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal
 
 from pyqttoolkit.modules.events import RejectableEvent
 
@@ -31,10 +29,12 @@ class ModuleWindow(MainWindow):
     """class::ModuleWindow
     Class for use with QWidget-based modules
     """
-    def __init__(self, theme_manager, title=None):
+    def __init__(self, theme_manager, title=None, singleton: bool = False):
         MainWindow.__init__(self, None, theme_manager)
         self._id = uuid4()
         self._theme_manager = theme_manager
+        self._singleton = singleton
+        self._force = not singleton
         if title:
             self.setWindowTitle(title)
 
@@ -57,6 +57,10 @@ class ModuleWindow(MainWindow):
         """function::closeEvent(self, event)
         Decorates the base class with a closing event
         """
+        if self._singleton and not self._force:
+            event.ignore()
+            self.hide()
+            return
         if hasattr(self.centralWidget(), 'prepareClose'):
             close_event = RejectableEvent()
             self.centralWidget().prepareClose(close_event)
@@ -67,6 +71,10 @@ class ModuleWindow(MainWindow):
         if event.isAccepted():
             self.centralWidget().close()
             self.closing.emit(self.moduleId)
+    
+    def forceClose(self):
+        self._force = True
+        return self.close()
 
     @property
     def themeManager(self):

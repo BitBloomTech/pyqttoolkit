@@ -16,9 +16,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from enum import Enum
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import Qt, QAbstractItemModel, pyqtSignal, QModelIndex, QVariant
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import Qt, QAbstractItemModel, pyqtSignal, QModelIndex, QVariant
 
 class DictPropertyTreeModel(QAbstractItemModel):
     def __init__(self, parent, data):

@@ -18,11 +18,9 @@
 The module service, creates and manages qt widget modules
 """
 from weakref import ref
-from functools import partial
+import weakref
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QObject, pyqtSlot
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import QObject, pyqtSlot, QTimer, Qt
 
 from pyqttoolkit.modules import Module, CommandModule
 from pyqttoolkit.views import ModuleWindow
@@ -33,8 +31,8 @@ class ModuleService(QObject):
     This class creates and displays modules (views, models and view managers)
     """
 
-    def __init__(self, dependency_container, theme_manager, project_updater, project_manager):
-        QObject.__init__(self, None)
+    def __init__(self, dependency_container, theme_manager, project_updater, project_manager, garbage_collector):
+        super().__init__(None)
         self._theme_manager = theme_manager
         self._dependency_container = dependency_container
         self._view_manager_refs = {}
@@ -46,10 +44,12 @@ class ModuleService(QObject):
         self._registered_modules = {}
         self._project_updater = project_updater
         self._project_manager = project_manager
+        self._garbage_collector = garbage_collector
     
     def register(self, module):
         if module.id in self._registered_modules:
             raise ValueError('module')
+        module.setParent(self)
         self._registered_modules[module.id] = module
         if module.launcher_config and self._project_updater is not None and self._project_manager is not None:
             self._project_updater.projectUpdated.connect(self._project_update_handler(module))
@@ -75,11 +75,12 @@ class ModuleService(QObject):
             self._module_opened(name)
             return result
         return None
-    
+
     def closeModules(self):
         for id_, window in list(self._windows.items()):
-            if id_ != 'root':
-                window.close()
+            if id_ != 'root' and not window.forceClose():
+                return False
+        return True
             
     def modules(self):
         return self._registered_modules
@@ -103,7 +104,8 @@ class ModuleService(QObject):
     
     def _create_root_module(self, id_):
         window = self._dependency_container.resolve(self._registered_modules[id_].view_type)
-        model = self._dependency_container.resolve(self._registered_modules[id_].model_type, {'parent': window})
+        model = self._dependency_container.resolve(self._registered_modules[id_].model_type)
+        model.setParent(window)
         view_manager = self._registered_modules[id_].view_manager_type(window, model)
         self._windows['root'] = window
         self._models['root'] = model
@@ -111,15 +113,14 @@ class ModuleService(QObject):
         return window
 
     def _create_sub_module(self, id_):
-        window = ModuleWindow(self._theme_manager, self._registered_modules[id_].title)
+        singleton = self._registered_modules[id_].singleton
+        window = ModuleWindow(self._theme_manager, self._registered_modules[id_].title, singleton)
+        window.setAttribute(Qt.WA_DeleteOnClose)
         model = self._dependency_container.resolve(
             self._registered_modules[id_].model_type,
             {'parent': window, 'module_id': id_}
         )
         view = self._dependency_container.resolve(self._registered_modules[id_].view_type, {'parent': window})
-        if hasattr(model, 'handle_view_closed'):
-            garbage_collector = self._dependency_container.get_instance('garbage_collector')
-            view.destroyed.connect(partial(model.handle_view_closed, garbage_collector))
         window.setModuleView(view)
         view_manager = self._registered_modules[id_].view_manager_type(view, model)
 
@@ -131,8 +132,16 @@ class ModuleService(QObject):
         self._model_refs[window.moduleId] = ref(model)
         window.closing.connect(self._remove_module)
         return window
-
+    
     def _remove_module(self, module_id):
         self._view_managers.pop(module_id)
-        self._windows.pop(module_id).setParent(None)
-        self._models.pop(module_id).setParent(None)
+        window = self._windows.pop(module_id)
+        self._models.pop(module_id)
+        window.deleteLater()
+        window.destroyed.connect(self._schedule_gc)
+    
+    def _schedule_gc(self):
+        QTimer.singleShot(0, self._gc)
+    
+    def _gc(self):
+        self._garbage_collector.check(full=True)

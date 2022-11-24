@@ -17,9 +17,8 @@
 import sys
 import logging
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QApplication, QWidget, pyqtSignal
-#pyline: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QApplication, QWidget
 
 from pyqttoolkit.services import MessageBoard, TaskRunner, ToolWindowService, EventRegistry, ObjectConverter
 from pyqttoolkit.dependencies import DependencyContainer
@@ -31,7 +30,7 @@ class Application(QApplication):
     def __init__(self, argv):
         QApplication.__init__(self, argv)
         self._dependency_container = DependencyContainer()
-        self._garbage_collector = GarbageCollector(self)
+        self._garbage_collector = GarbageCollector(self, None)
 
         self._module_service = None
         self._message_board = None
@@ -53,14 +52,6 @@ class Application(QApplication):
         
         self.mainWindowLoaded.emit(self._module_service.openModule('Base'))
         return self.exec_()
-    
-    def notify(self, receiver, event):
-        try:
-            return QApplication.notify(self, receiver, event)
-        #pylint: disable=broad-except
-        except Exception as e:
-            self._handle_exception(type(e), e, e.__traceback__)
-            return True
     
     def _handle_exception(self, ex_type, ex_value, traceback_obj):
         LOGGER.error('Application Exception: %s, %s', ex_type, ex_value)

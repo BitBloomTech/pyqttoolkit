@@ -34,9 +34,8 @@ class MessageResponse(IntEnum):
     discard = 8
     ignore = 16
 
-class MessageArgs(QObject):
-    def __init__(self, parent, message_type, message, checkbox_message, response_type):
-        QObject.__init__(self, parent)
+class MessageArgs:
+    def __init__(self, message_type, message, checkbox_message, response_type):
         self._message_type = message_type
         self._message = message
         self._checkbox_message = checkbox_message
@@ -81,7 +80,7 @@ class MessageBoard(QObject):
         QObject.__init__(self, parent)
     
     def post(self, message_type, message, response_type=MessageResponse.ok, checkbox_message=None):
-        self.message = MessageArgs(self, message_type, message, checkbox_message, response_type)
+        self.message = MessageArgs(message_type, message, checkbox_message, response_type)
         return self.message
 
     messageChanged = pyqtSignal(MessageArgs)

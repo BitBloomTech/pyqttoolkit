@@ -16,9 +16,8 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 import numpy as np
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QWidget, pyqtSignal, QGridLayout, QLabel
-#pylint: enable=no-name-in-module
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel
+from PyQt5.QtCore import pyqtSignal
 
 from pyqttoolkit.properties import AutoProperty, bind
 from pyqttoolkit.views import BindableCheckBox, AutoFloatLineEdit

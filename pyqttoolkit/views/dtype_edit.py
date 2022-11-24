@@ -16,9 +16,8 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from math import isnan, isfinite
 
-#pylint: disable=no-name-in-module
-from PyQt5.Qt import QDoubleValidator, pyqtSignal, Qt
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtGui import QDoubleValidator
 
 from pyqttoolkit.properties import AutoProperty
 from pyqttoolkit.views import LineEdit
@@ -27,7 +26,7 @@ def _type_editor(dtype, default_value):
     class _TypeEdit(LineEdit):
         def __init__(self, parent):
             LineEdit.__init__(self, parent)
-            self.setValidator(QDoubleValidator())
+            self.setValidator(QDoubleValidator(self))
             self.editComplete.connect(self._set_value)
             self.valueChanged.connect(self._set_text)
         

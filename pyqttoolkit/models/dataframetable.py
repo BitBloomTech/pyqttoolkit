@@ -14,9 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.Qt import QAbstractTableModel, Qt, QVariant, QModelIndex, QItemSelectionModel
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal, QAbstractTableModel, Qt, QVariant, QModelIndex, QItemSelectionModel
 
 class DataFrameTableModel(QAbstractTableModel):
     def __init__(self, parent, data, display_column=None, editable=False, row_headers=False):

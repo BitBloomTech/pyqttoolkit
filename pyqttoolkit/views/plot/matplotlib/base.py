@@ -17,12 +17,10 @@
 from io import BytesIO
 import numpy as np
 from datetime import datetime
-from functools import partial
 
-#pylint: disable=no-name-in-module
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.Qt import QVBoxLayout, QWidget, QSize, QTimer, QMenu, QAction, QApplication, QImage, QKeySequence
-#pylint: enable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal, QSize, QTimer
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QMenu, QAction, QApplication
+from PyQt5.QtGui import QKeySequence, QImage
 
 import matplotlib
 from matplotlib.legend import DraggableLegend
@@ -80,15 +78,15 @@ class MatPlotLibBase(QWidget):
     def __init__(self,
         parent, file_dialog_service,
         h_margin=(0.8, 0.1), v_margin=(0.5, 0.15),
-        h_axes=[Size.Scaled(1.0)], v_axes=[Size.Scaled(1.0)],
+        h_axes=None, v_axes=None,
         nx_default=1, ny_default=1
         ):
         QWidget.__init__(self, parent)
         self._file_dialog_service = file_dialog_service
         self._figure = Figure()
         self._canvas = FigureCanvas(self._figure)
-        h = [Size.Fixed(h_margin[0]), *h_axes, Size.Fixed(h_margin[1])]
-        v = [Size.Fixed(v_margin[0]), *v_axes, Size.Fixed(v_margin[1])]
+        h = [Size.Fixed(h_margin[0]), *(h_axes or [Size.Scaled(1.0)]), Size.Fixed(h_margin[1])]
+        v = [Size.Fixed(v_margin[0]), *(v_axes or [Size.Scaled(1.0)]), Size.Fixed(v_margin[1])]
         self._divider = Divider(self._figure, (0.0, 0.0, 1.0, 1.0), h, v, aspect=False)
         self._axes = Axes(self._figure, self._divider.get_position())
         self._axes.set_axes_locator(self._divider.new_locator(nx=nx_default, ny=ny_default))
