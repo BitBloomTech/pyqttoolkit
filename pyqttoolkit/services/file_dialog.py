@@ -49,5 +49,7 @@ class FileDialogService:
             if default_location and path.isdir(default_location):
                 return default_location
             return QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
+        elif self._project_manager.filename and not path.isdir(path.dirname(self._project_manager.filename)):
+            return QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
         else:
             return path.dirname(self._project_manager.filename)
