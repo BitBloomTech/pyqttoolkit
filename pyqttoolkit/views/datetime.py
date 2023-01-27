@@ -40,7 +40,7 @@ class DateTimeEdit(QDateTimeEdit):
         self.isLimit = False
         self._default = default
         self.isLimitChanged.connect(self._handle_is_limit_changed)
-        self.dateTimeChanged.connect(self._handle_date_time_changed)
+        self.editingFinished.connect(self._handle_date_time_editing_finished)
         self.setCalendarPopup(calendar_popup)
         if calendar_popup:
             self.calendarWidget().clicked.connect(self._handle_date_changed_from_calendar)
@@ -50,7 +50,7 @@ class DateTimeEdit(QDateTimeEdit):
 
     isLimit = AutoProperty(bool)
     
-    def focusOutEvent(self, event):
+    def focusOutEvent(self, event=None):
         if self._start_date and self.dateTime() < self._start_date:
             self.setDateTime(self._start_date)
         elif self._min_date and self.dateTime() < self._min_date:
@@ -59,7 +59,7 @@ class DateTimeEdit(QDateTimeEdit):
             self.setDateTime(self._end_date)
         elif self._max_date and self.dateTime() > self._max_date:
             self.setDateTime(self._max_date)
-        return QDateTimeEdit.focusOutEvent(self, event)
+        return event and QDateTimeEdit.focusOutEvent(self, event)
     
     def setDateTimeRange(self, start_date, end_date):
         self._start_date = start_date
@@ -98,10 +98,12 @@ class DateTimeEdit(QDateTimeEdit):
         stylesheet = 'DateTimeEdit {font: italic}' if is_limit else ''
         self.setStyleSheet(stylesheet)
     
-    def _handle_date_time_changed(self, value):
+    def _handle_date_time_editing_finished(self):
+        value = self.dateTime()
         if value is not None or (isinstance(value, QDateTime) and value.isValid()):
             self.isLimit = False
         self.valueChanged.emit(self.value)
+        self.focusOutEvent()
 
     def _handle_date_changed_from_calendar(self, value):
         self.value = QDateTime(value, QTime(0, 0))
