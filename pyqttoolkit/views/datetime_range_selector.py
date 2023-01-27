@@ -60,8 +60,8 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
             self._layout.addWidget(self._back_one, 0, 0, 2, 1)
             self._layout.addWidget(self._forward_one, 0, 2, 2, 1)
 
-        self._from_selector.dateTimeChanged.connect(self._date_from_changed)
-        self._to_selector.dateTimeChanged.connect(self._date_to_changed)
+        self._from_selector.editingFinished.connect(self._date_from_editing_finished)
+        self._to_selector.editingFinished.connect(self._date_to_editing_finished)
 
         self._menu = QMenu(self)
         self._reset = QAction(self.tr('Reset'), self)
@@ -164,12 +164,14 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
         """
         return self._layout.sizeHint()
 
-    def _date_from_changed(self, value):
+    def _date_from_editing_finished(self):
+        value = self._from_selector.dateTime()
         if self._update_limits_on_value_change:
             self._to_selector.setMinimumDateTime(value)
         self.dateFromChanged.emit(value)
 
-    def _date_to_changed(self, value):
+    def _date_to_editing_finished(self):
+        value = self._to_selector.dateTime()
         if self._update_limits_on_value_change:
             self._from_selector.setMaximumDateTime(value)
         self.dateToChanged.emit(value)
