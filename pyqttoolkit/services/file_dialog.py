@@ -25,7 +25,12 @@ class FileDialogService:
         self._application_configuration = application_configuration
     
     def get_save_filename(self, parent, filter_, default_name=None):
-        dialog = QFileDialog(parent, directory=self._get_default_directory(), filter=filter_)
+        default_directory = path.dirname(default_name) if default_name else None
+        dialog = QFileDialog(
+            parent,
+            directory=default_directory or self._get_default_directory(),
+            filter=filter_
+        )
         if default_name:
             dialog.selectFile(default_name)
         dialog.setModal(True)
