@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+import math
+
 import numpy as np
 
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel
@@ -135,7 +137,8 @@ class PlotOptionsView(QWidget):
         if np.isnan(value):
             return 'Auto'
         value = int(value * 100) / 100
-        return '{0:.2g}'.format(value)
+        precision = min(int(math.log10(abs(value))), 2) + 2
+        return f'{value:.{precision}g}'
     
     @property
     def grid_lines(self):
