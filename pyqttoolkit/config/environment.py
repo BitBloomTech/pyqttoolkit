@@ -15,11 +15,18 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 import os
+import json
 from .base import BaseApplicationConfiguration
 
 class EnvironmentApplicationConfiguration(BaseApplicationConfiguration):    
     def get_value(self, key):
-        return os.getenv(self._format_key(key))
+        value = os.getenv(self._format_key(key))
+        if value is None:
+            return value
+        try:
+            return json.loads(value)
+        except json.decoder.JSONDecodeError:
+            return value
 
     def set_value(self, key, value):
         os.environ[self._format_key(key)] = str(value)
