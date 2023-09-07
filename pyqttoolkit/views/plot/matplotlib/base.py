@@ -53,6 +53,14 @@ class _SpanSeletor(SpanSelector):
         self._select_none_handler = None
         self._min_span = 1.0
 
+    @property
+    def rect(self):
+        return self._selection_artist
+
+    @property
+    def handles(self):
+        return self._edge_handles
+
     def _release(self, event):
         SpanSelector._release(self, event)
         if self.rect.get_width() < self._min_span:
@@ -67,8 +75,11 @@ class _SpanSeletor(SpanSelector):
         self._min_span = min_span
 
 class _RectangleSelector(RectangleSelector):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _press(self, event):
-        if not self.interactive:
+        if not self._interactive:
             x = event.xdata
             y = event.ydata
             self.extents = x, x, y, y
@@ -109,7 +120,7 @@ class MatPlotLibBase(QWidget):
         self._decoration_artists = []
         self._is_panning = False
         
-        self._zoom_selector = _RectangleSelector(self._axes, self._zoom_selected)
+        self._zoom_selector = _RectangleSelector(self._axes, self._zoom_selected, interactive=True)
         self._zoom_selector.set_active(False)
         self._x_extent_padding = 0.01
         self._y_extent_padding = 0.01
@@ -118,8 +129,9 @@ class MatPlotLibBase(QWidget):
         self._active_tools = {}
         self._span = _SpanSeletor(
             self._axes, self._handle_span_select, 'horizontal',
-            rectprops=dict(alpha=0.2, facecolor='red', edgecolor='k'),
-            span_stays=True
+            props=dict(alpha=0.2, facecolor='red', edgecolor='k'),
+            interactive=True, drag_from_anywhere=True, handle_props=dict(alpha=0.0),
+            ignore_event_outside=True
         )
         self._span.set_on_select_none(self._handle_span_select_none)
         self.span = self._previous_span = None
@@ -638,10 +650,9 @@ class MatPlotLibBase(QWidget):
 
     def _update_span_rect(self, x_min, x_max=None):
         self._span.rect.set_x(x_min)
-        self._span.stay_rect.set_x(x_min)
         if x_max:
             self._span.rect.set_width(x_max - x_min)
-            self._span.stay_rect.set_width(x_max - x_min)
+        self._span.handles.set_data(self._span.extents)
     
     def _round_to_bin_width(self, x_min, x_max):
         return x_min, x_max
@@ -658,6 +669,8 @@ class MatPlotLibBase(QWidget):
     def activateTool(self, tool_type, active):
         if tool_type == ToolType.zoom:
             self._zoom_selector.set_active(active)
+            if not active:
+                self._zoom_selector.clear()
         elif tool_type == ToolType.span:
             if self._span.active and not active:
                 self._previous_span = self.span

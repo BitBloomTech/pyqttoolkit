@@ -35,7 +35,7 @@ class ToolbarContainer(QWidget):
 ToolbarContainer = make_styleable(ToolbarContainer)
 
 class PlotToolbarOptions(QWidget):
-    def __init__(self, parent, series_style, theme_manager, plot, options=None, legend_control=None, right_padding=0.0, has_extra_tools=False):
+    def __init__(self, parent, series_style, theme_manager, plot, options=None, legend_control=None, right_padding=0, has_extra_tools=False):
         QWidget.__init__(self, parent)
         self._theme_manager = theme_manager
         self._plot = plot
@@ -79,7 +79,7 @@ class PlotToolbarOptions(QWidget):
             self._padding_widget = QWidget(self)
             self._padding_widget.setVisible(False)
             self._layout.addWidget(self._padding_widget, 0, 2)
-            self._layout.setColumnMinimumWidth(2, right_padding)
+            self._layout.setColumnMinimumWidth(2, int(right_padding))
         else:
             self._padding_widget = None
         
