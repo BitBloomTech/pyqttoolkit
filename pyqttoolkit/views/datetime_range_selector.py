@@ -100,7 +100,7 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
             self.dateFrom = dateFrom
             self.dateTo = dateTo
             self.blockSignals(signals_blocked)
-            self.datesChanged.emit(self.dateFrom, self.dateTo)
+            self.datesChanged.emit(dateFrom, dateTo)
 
     def setDateRange(self, start_date, end_date):
         """function::setDateRange(self, start_data, end_date)

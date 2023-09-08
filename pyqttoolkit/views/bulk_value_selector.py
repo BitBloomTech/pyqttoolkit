@@ -69,8 +69,9 @@ class BulkValueSelectorWidget(QWidget):
     @auto_property(list)
     def selectedValues(self):
         if isinstance(self._value_selector.model(), QStringListModel):
+            string_list = self._value_selector.model().stringList()
             return [
-                self._value_selector.model().stringList()[i.row()]\
+                string_list[i.row()]\
                     for i in self._value_selector.selectedIndexes() if i.row() < self._value_selector.model().rowCount()
             ]
         return [self._value_selector.model().data(i, DataRole) for i in self._value_selector.selectedIndexes() if i.row() < self._value_selector.model().rowCount()]

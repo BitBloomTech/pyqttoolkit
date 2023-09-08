@@ -37,7 +37,7 @@ def pd_timestamp_to_q_datetime(pd_timestamp: datetime):
         return QDateTime()
     return QDateTime(
         QDate(pd_timestamp.year, pd_timestamp.month, pd_timestamp.day),
-        QTime(pd_timestamp.hour, pd_timestamp.minute, pd_timestamp.second, pd_timestamp.microsecond / 1000)
+        QTime(pd_timestamp.hour, pd_timestamp.minute, pd_timestamp.second, pd_timestamp.microsecond // 1000)
     )
 
 def step_qdatetime(control, fraction, interval, range_start, range_end):

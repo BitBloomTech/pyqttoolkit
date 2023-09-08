@@ -27,7 +27,8 @@ from matplotlib.legend import DraggableLegend
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
-from mpl_toolkits.axes_grid1 import Size, LocatableAxes, Divider
+from mpl_toolkits.axes_grid1 import Size, Divider
+from mpl_toolkits.axes_grid1.mpl_axes import Axes
 
 from pyqttoolkit.properties import AutoProperty, connect_all, bind
 from pyqttoolkit.models import SpanModel
@@ -52,11 +53,18 @@ class _SpanSeletor(SpanSelector):
         self._select_none_handler = None
         self._min_span = 1.0
 
+    @property
+    def rect(self):
+        return self._selection_artist
+
+    @property
+    def handles(self):
+        return self._edge_handles
+
     def _release(self, event):
         SpanSelector._release(self, event)
         if self.rect.get_width() < self._min_span:
             self.rect.set_visible(False)
-            self.stay_rect.set_visible(False)
             if self._select_none_handler is not None:
                 self._select_none_handler()
     
@@ -67,8 +75,11 @@ class _SpanSeletor(SpanSelector):
         self._min_span = min_span
 
 class _RectangleSelector(RectangleSelector):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _press(self, event):
-        if not self.interactive:
+        if not self._interactive:
             x = event.xdata
             y = event.ydata
             self.extents = x, x, y, y
@@ -88,7 +99,7 @@ class MatPlotLibBase(QWidget):
         h = [Size.Fixed(h_margin[0]), *(h_axes or [Size.Scaled(1.0)]), Size.Fixed(h_margin[1])]
         v = [Size.Fixed(v_margin[0]), *(v_axes or [Size.Scaled(1.0)]), Size.Fixed(v_margin[1])]
         self._divider = Divider(self._figure, (0.0, 0.0, 1.0, 1.0), h, v, aspect=False)
-        self._axes = LocatableAxes(self._figure, self._divider.get_position())
+        self._axes = Axes(self._figure, self._divider.get_position())
         self._axes.set_axes_locator(self._divider.new_locator(nx=nx_default, ny=ny_default))
         self._axes.set_zorder(2)
         self._axes.patch.set_visible(False)
@@ -109,7 +120,7 @@ class MatPlotLibBase(QWidget):
         self._decoration_artists = []
         self._is_panning = False
         
-        self._zoom_selector = _RectangleSelector(self._axes, self._zoom_selected)
+        self._zoom_selector = _RectangleSelector(self._axes, self._zoom_selected, interactive=True)
         self._zoom_selector.set_active(False)
         self._x_extent_padding = 0.01
         self._y_extent_padding = 0.01
@@ -118,8 +129,9 @@ class MatPlotLibBase(QWidget):
         self._active_tools = {}
         self._span = _SpanSeletor(
             self._axes, self._handle_span_select, 'horizontal',
-            rectprops=dict(alpha=0.2, facecolor='red', edgecolor='k'),
-            span_stays=True
+            props=dict(alpha=0.2, facecolor='red', edgecolor='k'),
+            interactive=True, drag_from_anywhere=True, handle_props=dict(alpha=0.0),
+            ignore_event_outside=True
         )
         self._span.set_on_select_none(self._handle_span_select_none)
         self.span = self._previous_span = None
@@ -638,10 +650,9 @@ class MatPlotLibBase(QWidget):
 
     def _update_span_rect(self, x_min, x_max=None):
         self._span.rect.set_x(x_min)
-        self._span.stay_rect.set_x(x_min)
         if x_max:
             self._span.rect.set_width(x_max - x_min)
-            self._span.stay_rect.set_width(x_max - x_min)
+        self._span.handles.set_data(self._span.extents)
     
     def _round_to_bin_width(self, x_min, x_max):
         return x_min, x_max
@@ -658,15 +669,17 @@ class MatPlotLibBase(QWidget):
     def activateTool(self, tool_type, active):
         if tool_type == ToolType.zoom:
             self._zoom_selector.set_active(active)
+            if not active:
+                self._zoom_selector.clear()
         elif tool_type == ToolType.span:
             if self._span.active and not active:
                 self._previous_span = self.span
                 self.span = None
-                for r in [self._span.rect, self._span.stay_rect]:
+                for r in [self._span.rect]:
                     self._remove_artist(r)
             elif not self._span.active and active:
                 self.span = self._previous_span
-                for r in [self._span.rect, self._span.stay_rect]:
+                for r in [self._span.rect]:
                     self._add_artist(r)
             self._span.active = active
             self.draw()
@@ -850,15 +863,15 @@ class MatPlotLibBase(QWidget):
             self._cached_label_width_height = width, height
         return self._cached_label_width_height
 
-    def _create_new_axes(self, nx=1, ny=1) -> LocatableAxes:
-        axes = LocatableAxes(self._figure, self._divider.get_position())
+    def _create_new_axes(self, nx=1, ny=1) -> Axes:
+        axes = Axes(self._figure, self._divider.get_position())
         axes.set_axes_locator(self._divider.new_locator(nx=nx, ny=ny))
         self._figure.add_axes(axes)
         return axes
     
     @staticmethod
     def _create_secondary_xy_axes(figure, divider, nx=1, ny=1, visible=False, z_order=1):
-        axes = LocatableAxes(figure, divider.get_position())
+        axes = Axes(figure, divider.get_position())
         axes.set_axes_locator(divider.new_locator(nx=nx, ny=ny))
         axes.xaxis.tick_top()
         axes.xaxis.set_label_position('top')
@@ -873,7 +886,7 @@ class MatPlotLibBase(QWidget):
 
     @staticmethod
     def _create_shared_axes(figure, divider, shared_axes, nx=1, ny=1, visible=False, z_order=1):
-        axes = LocatableAxes(figure, divider.get_position(), sharex=shared_axes, sharey=shared_axes, frameon=False)
+        axes = Axes(figure, divider.get_position(), sharex=shared_axes, sharey=shared_axes, frameon=False)
         axes.set_axes_locator(divider.new_locator(nx=nx, ny=ny))
         for spine in axes.spines.values():
             spine.set_visible(False)
