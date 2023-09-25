@@ -17,10 +17,13 @@
 """:mod:`datetime_range_selector`
 Defines the DatetimeRangeSelectorWidget
 """
-from PyQt5.QtCore import pyqtSignal, QDateTime, QSize
-from PyQt5.QtWidgets import QGridLayout, QSizePolicy, QMenu, QAction
+import weakref
 
-from datetime import timedelta
+from PyQt5.QtCore import pyqtSignal, QDateTime, QSize
+from PyQt5.QtWidgets import QGridLayout, QSizePolicy, QMenu, QAction, QPushButton
+
+from datetime import timedelta, datetime
+from typing import Optional, Tuple
 
 from pyqttoolkit.properties import auto_property, bind, unbind
 from pyqttoolkit.datetime.qdatetime import step_qdatetime
@@ -34,7 +37,9 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
     Widget to select a datetime range
     """
     def __init__(self, parent, paging=False, link_manager=None, reset_enabled=True, link_type=None,
-                    update_limits_on_value_change: bool = True):
+                    update_limits_on_value_change: bool = True,
+                    default_limits: Optional[Tuple[datetime, datetime]]=None,
+                    set_to_limit_buttons: bool = False):
         LinkableWidget.__init__(self, parent, link_manager, link_type)
         self._date_range_start = self._date_range_end = None
         self._interval = None
@@ -44,8 +49,11 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
             self._back_one = IconButton('left.svg', self.tr('Scroll Left'), self, QSize(8, 30))
             self._back_one.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
             self._back_one.clicked.connect(self._step(-1))
-        self._from_selector = DateTimeEdit(self)
-        self._to_selector = DateTimeEdit(self)
+        self._from_selector = DateTimeEdit(self, DateTimeEdit.Limit.min)
+        self._to_selector = DateTimeEdit(self, DateTimeEdit.Limit.max)
+        if default_limits:
+            self._from_selector.setDateTimeRange(*default_limits)
+            self._to_selector.setDateTimeRange(*default_limits)
         if paging:
             self._forward_one = IconButton('right.svg', self.tr('Scroll Right'), self, QSize(8, 30))
             self._forward_one.clicked.connect(self._step(1))
@@ -60,6 +68,33 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
             self._layout.addWidget(self._back_one, 0, 0, 2, 1)
             self._layout.addWidget(self._forward_one, 0, 2, 2, 1)
 
+        if set_to_limit_buttons:
+            self._set_to_start = QPushButton(self.tr('Set to Start'), self)
+            self._set_to_start.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self._set_to_start.setFixedWidth(65)
+            self._set_to_end = QPushButton(self.tr('Set to End'), self)
+            self._set_to_end.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self._set_to_end.setFixedWidth(65)
+
+            self._layout.addWidget(self._set_to_start, 0, 2)
+            self._layout.addWidget(self._set_to_end, 1, 2)
+
+            def _handle_set_to_limit_clicked(widget, prop):
+                view_ref = weakref.ref(self)
+                def _():
+                    view = view_ref()
+                    if view:
+                        widget.reset()
+                        prop.__get__(view).emit(widget.value)
+                return _
+
+            self._set_to_start.clicked.connect(
+                _handle_set_to_limit_clicked(
+                    self._from_selector, DatetimeRangeSelectorWidget.dateFromChanged))
+            self._set_to_end.clicked.connect(
+                _handle_set_to_limit_clicked(
+                    self._to_selector, DatetimeRangeSelectorWidget.dateToChanged))
+
         self._from_selector.editingFinished.connect(self._date_from_editing_finished)
         self._to_selector.editingFinished.connect(self._date_to_editing_finished)
 
@@ -72,6 +107,14 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
     dateFromChanged = pyqtSignal(QDateTime)
     dateToChanged = pyqtSignal(QDateTime)
     datesChanged = pyqtSignal(QDateTime, QDateTime)
+
+    @property
+    def date_from_selector(self):
+        return self._from_selector
+
+    @property
+    def date_to_selector(self):
+        return self._to_selector
 
     def contextMenuEvent(self, event):
         if self._reset_enabled:

@@ -95,7 +95,7 @@ class DateTimeEdit(QDateTimeEdit):
         self.value = QDateTime()
     
     def _handle_is_limit_changed(self, is_limit):
-        stylesheet = 'DateTimeEdit {font: italic}' if is_limit else ''
+        stylesheet = 'DateTimeEdit {font: italic}' if is_limit else 'DateTimeEdit {font: normal}'
         self.setStyleSheet(stylesheet)
     
     def _handle_date_time_editing_finished(self):
