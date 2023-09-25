@@ -85,7 +85,7 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
                     view = view_ref()
                     if view:
                         widget.reset()
-                        prop.__get__(self).emit(widget.value)
+                        prop.__get__(view).emit(widget.value)
                 return _
 
             self._set_to_start.clicked.connect(
