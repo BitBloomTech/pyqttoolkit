@@ -17,6 +17,8 @@
 """:mod:`datetime_range_selector`
 Defines the DatetimeRangeSelectorWidget
 """
+import weakref
+
 from PyQt5.QtCore import pyqtSignal, QDateTime, QSize
 from PyQt5.QtWidgets import QGridLayout, QSizePolicy, QMenu, QAction, QPushButton
 
@@ -78,9 +80,12 @@ class DatetimeRangeSelectorWidget(LinkableWidget):
             self._layout.addWidget(self._set_to_end, 1, 2)
 
             def _handle_set_to_limit_clicked(widget, prop):
+                view_ref = weakref.ref(self)
                 def _():
-                    widget.reset()
-                    prop.__get__(self).emit(widget.value)
+                    view = view_ref()
+                    if view:
+                        widget.reset()
+                        prop.__get__(self).emit(widget.value)
                 return _
 
             self._set_to_start.clicked.connect(
