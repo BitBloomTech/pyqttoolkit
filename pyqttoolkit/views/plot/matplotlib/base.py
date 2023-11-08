@@ -825,13 +825,21 @@ class MatPlotLibBase(QWidget):
             y_ticks, y_labels = self._get_labels(self.data.y_labels, step, horizontal=False)
             self._axes.set_yticks(y_ticks)
             self._axes.set_yticklabels(y_labels)
+            self._adjust_to_yticklabels_width(y_labels)
+
+    def _adjust_to_yticklabels_width(self, labels):
+        sizes = self._divider.get_horizontal()
+        width, _ = self._get_label_width_height(labels, horizontal=False)
+        width += 0.35 * self._figure.dpi # Need this offset to account for the tick marks and ylabel
+        sizes[0] = Size.Fixed(width / self._figure.dpi)
+        self._divider.set_horizontal(sizes)
 
     def _get_labels(self, labels, step, horizontal=True):
         (x0, x1), (y0, y1) = self._get_xy_extents()
         start, end = (int(x0), int(x1)) if horizontal else (int(y0), int(y1))
         visible_points = end - start
         if not (step and step > 0):
-            width, height = self._get_label_width_height(labels)
+            width, height = self._get_label_width_height(labels, horizontal=horizontal)
             axes_bbox = self._axes.get_window_extent(self._figure.canvas.get_renderer()).transformed(self._figure.dpi_scale_trans.inverted())
             plot_size = (axes_bbox.width if horizontal else axes_bbox.height) * self._figure.dpi
             size = (width if horizontal else height)
@@ -851,8 +859,9 @@ class MatPlotLibBase(QWidget):
                 display_labels[i] = ''
         return indexes, display_labels
     
-    def _get_label_width_height(self, labels):
-        if not self._cached_label_width_height:
+    def _get_label_width_height(self, labels, horizontal=True):
+        self._cached_label_width_height = self._cached_label_width_height or {}
+        if horizontal not in self._cached_label_width_height:
             font = MatPlotLibFont.default()
             width = 0
             height = 0
@@ -860,8 +869,8 @@ class MatPlotLibBase(QWidget):
                 next_width, next_height = font.get_size(str(label), matplotlib.rcParams['font.size'], self._figure.dpi)
                 width = max(width, next_width)
                 height = max(height, next_height)
-            self._cached_label_width_height = width, height
-        return self._cached_label_width_height
+            self._cached_label_width_height[horizontal] = width, height
+        return self._cached_label_width_height[horizontal]
 
     def _create_new_axes(self, nx=1, ny=1) -> Axes:
         axes = Axes(self._figure, self._divider.get_position())
