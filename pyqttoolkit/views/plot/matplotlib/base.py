@@ -829,8 +829,17 @@ class MatPlotLibBase(QWidget):
 
     def _adjust_to_yticklabels_width(self, labels):
         sizes = self._divider.get_horizontal()
-        width, _ = self._get_label_width_height(labels, horizontal=False)
-        width += 0.35 * self._figure.dpi # Need this offset to account for the tick marks and ylabel
+        ticklabels_font_family = self._axes.yaxis.get_ticklabels()[0].get_family() if labels else None
+        ticklabels_font_size = self._axes.yaxis.get_ticklabels()[0].get_size() if labels else None
+        width, _ = self._get_label_width_height(
+            labels, horizontal=False, font_family=ticklabels_font_family, font_size=ticklabels_font_size)
+
+        ylabel_font_family = self._axes.yaxis.get_label().get_family()
+        ylabel_font_size = self._axes.yaxis.get_label().get_size()
+        _, y_label_width = self._get_label_width_height(
+            [self._axes.get_ylabel()], horizontal=True, font_family=ylabel_font_family, font_size=ylabel_font_size)
+     
+        width += y_label_width + 0.2 * self._figure.dpi # Need this offset to account for the tick marks and ylabel
         sizes[0] = Size.Fixed(width / self._figure.dpi)
         self._divider.set_horizontal(sizes)
 
@@ -859,18 +868,20 @@ class MatPlotLibBase(QWidget):
                 display_labels[i] = ''
         return indexes, display_labels
     
-    def _get_label_width_height(self, labels, horizontal=True):
+    def _get_label_width_height(self, labels, horizontal=True, font_family=None, font_size=None):
         self._cached_label_width_height = self._cached_label_width_height or {}
-        if horizontal not in self._cached_label_width_height:
-            font = MatPlotLibFont.default()
+        cache_key = ''.join([str(i) for i in (horizontal, font_family, font_size)])
+        if cache_key not in self._cached_label_width_height:
+            font = MatPlotLibFont(font=font_family) if font_family else MatPlotLibFont.default()
             width = 0
             height = 0
+            font_size = font_size or matplotlib.rcParams['font.size']
             for label in labels:
-                next_width, next_height = font.get_size(str(label), matplotlib.rcParams['font.size'], self._figure.dpi)
+                next_width, next_height = font.get_size(str(label), font_size, self._figure.dpi)
                 width = max(width, next_width)
                 height = max(height, next_height)
-            self._cached_label_width_height[horizontal] = width, height
-        return self._cached_label_width_height[horizontal]
+            self._cached_label_width_height[cache_key] = width, height
+        return self._cached_label_width_height[cache_key]
 
     def _create_new_axes(self, nx=1, ny=1) -> Axes:
         axes = Axes(self._figure, self._divider.get_position())
