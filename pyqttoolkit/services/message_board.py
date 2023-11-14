@@ -78,8 +78,17 @@ class MessageArgs:
 class MessageBoard(QObject):
     def __init__(self, parent):
         QObject.__init__(self, parent)
-    
+        self._message_enabled = True
+
+    def messageEnabled(self):
+        return self._message_enabled
+
+    def setMessageEnabled(self, value):
+        self._message_enabled = value
+
     def post(self, message_type, message, response_type=MessageResponse.ok, checkbox_message=None):
+        if not self._message_enabled:
+            return
         self.message = MessageArgs(message_type, message, checkbox_message, response_type)
         return self.message
 
