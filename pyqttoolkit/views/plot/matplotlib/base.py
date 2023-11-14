@@ -825,13 +825,30 @@ class MatPlotLibBase(QWidget):
             y_ticks, y_labels = self._get_labels(self.data.y_labels, step, horizontal=False)
             self._axes.set_yticks(y_ticks)
             self._axes.set_yticklabels(y_labels)
+            self._adjust_to_yticklabels_width(y_labels)
+
+    def _adjust_to_yticklabels_width(self, labels):
+        sizes = self._divider.get_horizontal()
+        ticklabels_font_family = self._axes.yaxis.get_ticklabels()[0].get_family() if labels else None
+        ticklabels_font_size = self._axes.yaxis.get_ticklabels()[0].get_size() if labels else None
+        width, _ = self._get_label_width_height(
+            labels, horizontal=False, font_family=ticklabels_font_family, font_size=ticklabels_font_size)
+
+        ylabel_font_family = self._axes.yaxis.get_label().get_family()
+        ylabel_font_size = self._axes.yaxis.get_label().get_size()
+        _, y_label_width = self._get_label_width_height(
+            [self._axes.get_ylabel()], horizontal=True, font_family=ylabel_font_family, font_size=ylabel_font_size)
+     
+        width += y_label_width + 0.2 * self._figure.dpi # Need this offset to account for the tick marks and ylabel
+        sizes[0] = Size.Fixed(width / self._figure.dpi)
+        self._divider.set_horizontal(sizes)
 
     def _get_labels(self, labels, step, horizontal=True):
         (x0, x1), (y0, y1) = self._get_xy_extents()
         start, end = (int(x0), int(x1)) if horizontal else (int(y0), int(y1))
         visible_points = end - start
         if not (step and step > 0):
-            width, height = self._get_label_width_height(labels)
+            width, height = self._get_label_width_height(labels, horizontal=horizontal)
             axes_bbox = self._axes.get_window_extent(self._figure.canvas.get_renderer()).transformed(self._figure.dpi_scale_trans.inverted())
             plot_size = (axes_bbox.width if horizontal else axes_bbox.height) * self._figure.dpi
             size = (width if horizontal else height)
@@ -851,17 +868,20 @@ class MatPlotLibBase(QWidget):
                 display_labels[i] = ''
         return indexes, display_labels
     
-    def _get_label_width_height(self, labels):
-        if not self._cached_label_width_height:
-            font = MatPlotLibFont.default()
+    def _get_label_width_height(self, labels, horizontal=True, font_family=None, font_size=None):
+        self._cached_label_width_height = self._cached_label_width_height or {}
+        cache_key = ''.join([str(i) for i in (horizontal, font_family, font_size)])
+        if cache_key not in self._cached_label_width_height:
+            font = MatPlotLibFont(font=font_family) if font_family else MatPlotLibFont.default()
             width = 0
             height = 0
+            font_size = font_size or matplotlib.rcParams['font.size']
             for label in labels:
-                next_width, next_height = font.get_size(str(label), matplotlib.rcParams['font.size'], self._figure.dpi)
+                next_width, next_height = font.get_size(str(label), font_size, self._figure.dpi)
                 width = max(width, next_width)
                 height = max(height, next_height)
-            self._cached_label_width_height = width, height
-        return self._cached_label_width_height
+            self._cached_label_width_height[cache_key] = width, height
+        return self._cached_label_width_height[cache_key]
 
     def _create_new_axes(self, nx=1, ny=1) -> Axes:
         axes = Axes(self._figure, self._divider.get_position())
