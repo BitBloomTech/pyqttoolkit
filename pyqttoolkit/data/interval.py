@@ -22,4 +22,4 @@ def calculate_interval(values, sort=True):
     if sort:
         values = sorted(values)
     values_series = pd.Series(values)
-    return (values_series - values_series.shift(1)).mode()[0]
+    return (values_series - values_series.shift(1)).min()
