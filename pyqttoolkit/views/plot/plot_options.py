@@ -136,9 +136,9 @@ class PlotOptionsView(QWidget):
             return '-inf'
         if np.isnan(value):
             return 'Auto'
+        value = int(value * 100) / 100
         if value == 0:
             return '0.0'
-        value = int(value * 100) / 100
         precision = min(int(math.log10(abs(value))), 2) + 2
         return f'{value:.{precision}g}'
     
