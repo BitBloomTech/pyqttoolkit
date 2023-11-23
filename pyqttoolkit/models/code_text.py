@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+from io import StringIO
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from pyqttoolkit.properties import AutoProperty
@@ -24,14 +25,14 @@ class CodeTextModel(QObject):
         self.textChanged.connect(self._validate)
         self._validator = validator
         self.text = ''
-        self.output = ''
+        self.output = StringIO()
 
     textChanged = pyqtSignal(str)
-    outputChanged = pyqtSignal(str)
+    outputChanged = pyqtSignal(StringIO)
     validationMessageChanged = pyqtSignal(str)
 
     text = AutoProperty(str)
-    output = AutoProperty(str)
+    output = AutoProperty(StringIO)
     validationMessage = AutoProperty(str)
 
     def _validate(self, value):
