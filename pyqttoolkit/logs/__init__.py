@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+from typing import Callable
+from io import StringIO
 import logging
 from logging import handlers
 from functools import wraps
@@ -109,3 +111,30 @@ def logf(level, log_args=True):
             return result
         return _
     return logf_decorator
+
+
+class LogStream:
+    def __init__(self, notify_update: Callable = None):
+        self._buffer = StringIO()
+        self._notify_update = notify_update
+
+    def __iadd__(self, other):
+        self.write(other)
+        return self
+
+    def write(self, message):
+        self._buffer.write(message)
+        if self._notify_update:
+            self._notify_update()
+
+    def flush(self):
+        self._buffer.flush()
+
+    def getvalue(self):
+        return self._buffer.getvalue()
+
+    def clear(self):
+        self._buffer.close()
+        self._buffer = StringIO()
+        if self._notify_update:
+            self._notify_update()

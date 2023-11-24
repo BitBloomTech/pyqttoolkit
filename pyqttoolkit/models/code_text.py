@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from io import StringIO
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from pyqttoolkit.properties import AutoProperty
+from pyqttoolkit.logs import LogStream
 
 class CodeTextModel(QObject):
     def __init__(self, parent, validator):
@@ -25,16 +25,19 @@ class CodeTextModel(QObject):
         self.textChanged.connect(self._validate)
         self._validator = validator
         self.text = ''
-        self.output = StringIO()
+        self.output = LogStream(self._handle_output_buffer_changed)
 
     textChanged = pyqtSignal(str)
-    outputChanged = pyqtSignal(StringIO)
+    outputChanged = pyqtSignal(LogStream)
     validationMessageChanged = pyqtSignal(str)
 
     text = AutoProperty(str)
-    output = AutoProperty(StringIO)
+    output = AutoProperty(LogStream)
     validationMessage = AutoProperty(str)
 
     def _validate(self, value):
         validation_model = self._validator(value)
         self.validationMessage = validation_model.error if validation_model else ''
+
+    def _handle_output_buffer_changed(self):
+        self.outputChanged.emit(self.output)

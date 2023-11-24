@@ -207,8 +207,9 @@ class CodeEdit(QWidget):
         def _(text):
             widget_inst = widget_ref()
             if widget_inst:
-                if widget_inst.toPlainText() != text if isinstance(text, str) else text.getvalue():
-                    widget_inst.setPlainText(text if isinstance(text, str) else text.getvalue())
+                text = text if isinstance(text, str) else text.getvalue()
+                if widget_inst.toPlainText() != text:
+                    widget_inst.setPlainText(text)
                     if scroll_to_end:
                         widget_inst.verticalScrollBar().setSliderPosition(widget_inst.verticalScrollBar().maximum())
         return _
