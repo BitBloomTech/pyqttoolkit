@@ -194,7 +194,7 @@ class CodeEdit(QWidget):
         self._text_edit.setPlainText(model.text)
         model.textChanged.connect(self._set_text(self._text_edit))
         if hasattr(model, 'output'):
-            self._output_pane.setPlainText(model.output)
+            self._output_pane.setPlainText(model.output.getvalue())
             model.outputChanged.connect(self._set_text(self._output_pane, True))
             self._output_pane.setVisible(True)
         else:
@@ -207,6 +207,7 @@ class CodeEdit(QWidget):
         def _(text):
             widget_inst = widget_ref()
             if widget_inst:
+                text = text if isinstance(text, str) else text.getvalue()
                 if widget_inst.toPlainText() != text:
                     widget_inst.setPlainText(text)
                     if scroll_to_end:
