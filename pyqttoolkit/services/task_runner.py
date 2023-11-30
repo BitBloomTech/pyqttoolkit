@@ -19,6 +19,7 @@ Defines the task runner
 """
 import logging
 import inspect
+from contextlib import contextmanager
 
 from PyQt5.QtCore import QObject, pyqtSignal, QEvent
 from PyQt5.QtWidgets import QApplication
@@ -178,7 +179,7 @@ class TaskRunner(QObject):
         self._is_cancelled = False
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='TaskRunner_Thread')
 
-    def run_task(self, task_function, task_args=None, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, show_progress=True, cancellable=False, **kwargs):
+    def run_task(self, task_function, task_args=None, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, show_progress=True, cancellable=False, force_indeterminate_start=False, **kwargs):
         """function::runTask(self, task_function, task_args, on_completed, on_error)
         :param task_function: The function to execute
         :param task_args: The arguments to pass to the function
@@ -194,7 +195,7 @@ class TaskRunner(QObject):
 
         if 'update_progress' in parameters:
             kwargs['update_progress'] = self.update_progress
-            indeterminate = False
+            indeterminate = force_indeterminate_start
         else:
             indeterminate = True
 
