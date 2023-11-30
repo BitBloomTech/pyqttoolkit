@@ -19,7 +19,6 @@ Defines the task runner
 """
 import logging
 import inspect
-from contextlib import contextmanager
 
 from PyQt5.QtCore import QObject, pyqtSignal, QEvent
 from PyQt5.QtWidgets import QApplication
