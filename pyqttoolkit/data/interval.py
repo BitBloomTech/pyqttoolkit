@@ -22,4 +22,5 @@ def calculate_interval(values, sort=True):
     if sort:
         values = sorted(values)
     values_series = pd.Series(values)
-    return (values_series - values_series.shift(1)).min()
+    # We want to ensure that the calculated interval is accurate for 90% of values to avoid mistakenly losing values
+    return (values_series - values_series.shift(1)).quantile(0.1)
