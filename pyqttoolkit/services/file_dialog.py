@@ -16,21 +16,32 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from os import path
 
-from PyQt5.QtCore import QStandardPaths
+from PyQt5.QtCore import QStandardPaths, QTimer
 from PyQt5.QtWidgets import QFileDialog
 
+from .event_registry import EventTypes
+
 class FileDialogService:
-    def __init__(self, project_manager, application_configuration):
+    def __init__(self, project_manager, application_configuration, event_registry):
         self._project_manager = project_manager
         self._application_configuration = application_configuration
-    
-    def get_save_filename(self, parent, filter_, default_name=None):
-        default_directory = path.dirname(default_name) if default_name else None
+        self._event_registry = event_registry
+
+    def _get_dialog(self, parent, filter_, default_directory=None):
         dialog = QFileDialog(
             parent,
             directory=default_directory or self._get_default_directory(),
             filter=filter_
         )
+        def _notify_save_dialog_finished(result):
+            self._event_registry.event(EventTypes.save_dialog_finished).emit(result)
+        dialog.finished.connect(_notify_save_dialog_finished)
+        return dialog
+
+    def get_save_filename(self, parent, filter_, default_name=None):
+        default_directory = path.dirname(default_name) if default_name else None
+        dialog = self._get_dialog(parent, filter_, default_directory)
+
         if default_name:
             dialog.selectFile(default_name)
         dialog.setModal(True)
@@ -40,7 +51,7 @@ class FileDialogService:
         return dialog.selectedFiles()[0]
     
     def get_open_filename(self, parent, filter_, file_mode=None):
-        dialog = QFileDialog(parent, directory=self._get_default_directory(), filter=filter_)
+        dialog = self._get_dialog(parent, filter_)
         if file_mode:
             dialog.setFileMode(file_mode)
         if dialog.exec_():
