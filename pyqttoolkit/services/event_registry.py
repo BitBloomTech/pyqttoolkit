@@ -21,6 +21,7 @@ class EventTypes:
     save_requested = 'save_requested'
     close_project_requested = 'close_project_requested'
     project_closed = 'project_closed'
+    save_dialog_finished = 'save_dialog_finished'
 
 class FutureConnector:
     def __init__(self):
