@@ -183,9 +183,14 @@ class MatPlotLibBase(QWidget):
     enabledToolsChanged = pyqtSignal()
     spanChanged = pyqtSignal(SpanModel)
     hasHiddenSeriesChanged = pyqtSignal(bool)
+    yTickLabelsWidthAdjusted = pyqtSignal()
 
     span = AutoProperty(SpanModel)
     hasHiddenSeries = AutoProperty(bool)
+
+    @property
+    def divider(self):
+        return self._divider
 
     def setOptionsView(self, options_view):
         self._options_view = options_view
@@ -842,6 +847,7 @@ class MatPlotLibBase(QWidget):
         width += y_label_width + 0.2 * self._figure.dpi # Need this offset to account for the tick marks and ylabel
         sizes[0] = Size.Fixed(width / self._figure.dpi)
         self._divider.set_horizontal(sizes)
+        self.yTickLabelsWidthAdjusted.emit()
 
     def _get_labels(self, labels, step, horizontal=True):
         (x0, x1), (y0, y1) = self._get_xy_extents()
