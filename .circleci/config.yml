@@ -101,8 +101,8 @@ jobs:
           command: |
             echo -e "[pypi]" >> ~/.pypirc
             echo -e "repository = $PYPI_REPOSITORY" >> ~/.pypirc
-            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
-            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+            echo -e "username = __token__" >> ~/.pypirc
+            echo -e "password = pypi-$PYPI_APITOKEN" >> ~/.pypirc
       
       - run:
           name: Upload package
