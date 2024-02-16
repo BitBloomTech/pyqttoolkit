@@ -29,7 +29,9 @@ class Popup(QFrame):
         self.show()
         if isinstance(rect, QRect):
             new_pos = parent.mapToGlobal(rect.bottomRight() - QPoint(self.width(), 0))
-            new_pos = QPoint(max(0, new_pos.x()), new_pos.y())
+            new_pos = QPoint(
+                max(0, new_pos.x()),
+                min(new_pos.y(), self.screen().geometry().bottomRight().y() - self.height()))
         elif isinstance(rect, QPoint):
             new_pos = parent.mapToGlobal(rect)
         self.move(new_pos)
