@@ -30,6 +30,8 @@ from matplotlib.widgets import RectangleSelector, SpanSelector
 from mpl_toolkits.axes_grid1 import Size, Divider
 from mpl_toolkits.axes_grid1.mpl_axes import Axes
 
+import pandas as pd
+
 from pyqttoolkit.properties import AutoProperty, connect_all, bind
 from pyqttoolkit.models import SpanModel
 from pyqttoolkit.views import TableView
@@ -40,6 +42,10 @@ from ..tool_type import ToolType
 from .font import MatPlotLibFont
 
 def _to_finite(value):
+    if isinstance(value, pd.Timestamp):
+        value = value.to_pydatetime()
+    if value is None:
+        value = np.nan
     return value if isinstance(value, datetime) or np.isfinite(value) else 0
 
 def _safe_limits(lower, upper):
