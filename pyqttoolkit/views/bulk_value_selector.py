@@ -83,7 +83,7 @@ class BulkValueSelectorWidget(QWidget):
             else self._select_values if self._value_selector.model()
             else None
         )
-        if select_values:
+        if select_values and values != self.selectedValues:
             signals_blocked = self.blockSignals(True)
             self._value_selector.clearSelection()
             select_values(values)
