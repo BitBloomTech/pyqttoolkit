@@ -17,7 +17,7 @@
 from enum import Enum, IntEnum
 
 #pylint: disable=no-name-in-module
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, Qt
 #pylint: enable=no-name-in-module
 
 from ..properties import AutoProperty
@@ -35,11 +35,12 @@ class MessageResponse(IntEnum):
     ignore = 16
 
 class MessageArgs:
-    def __init__(self, message_type, message, checkbox_message, response_type):
+    def __init__(self, message_type, message, checkbox_message, response_type, text_format):
         self._message_type = message_type
         self._message = message
         self._checkbox_message = checkbox_message
         self._response_type = response_type
+        self._text_format = text_format
         self._response = None
         self._checkbox_value = None
     
@@ -58,7 +59,11 @@ class MessageArgs:
     @property
     def response_type(self):
         return self._response_type
-    
+
+    @property
+    def text_format(self):
+        return self._text_format
+
     @property
     def response(self):
         return self._response
@@ -86,10 +91,10 @@ class MessageBoard(QObject):
     def setMessageEnabled(self, value):
         self._message_enabled = value
 
-    def post(self, message_type, message, response_type=MessageResponse.ok, checkbox_message=None):
+    def post(self, message_type, message, response_type=MessageResponse.ok, checkbox_message=None, text_format=Qt.PlainText):
         if not self._message_enabled:
             return
-        self.message = MessageArgs(message_type, message, checkbox_message, response_type)
+        self.message = MessageArgs(message_type, message, checkbox_message, response_type, text_format)
         return self.message
 
     messageChanged = pyqtSignal(MessageArgs)
