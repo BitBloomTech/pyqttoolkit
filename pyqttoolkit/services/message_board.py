@@ -91,7 +91,7 @@ class MessageBoard(QObject):
     def setMessageEnabled(self, value):
         self._message_enabled = value
 
-    def post(self, message_type, message, response_type=MessageResponse.ok, checkbox_message=None, text_format=Qt.PlainText):
+    def post(self, message_type, message, response_type=MessageResponse.ok, checkbox_message=None, text_format=Qt.AutoText):
         if not self._message_enabled:
             return
         self.message = MessageArgs(message_type, message, checkbox_message, response_type, text_format)
