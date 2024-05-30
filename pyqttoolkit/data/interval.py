@@ -19,8 +19,8 @@ import pandas as pd
 def calculate_interval(values, sort=True):
     if len(values) < 2:
         return None
-    if sort:
-        values = sorted(values)
     values_series = pd.Series(values)
+    if sort:
+        values_series = values_series.sort_values()
     # We want to ensure that the calculated interval is accurate for 90% of values to avoid mistakenly losing values
     return (values_series - values_series.shift(1)).quantile(0.1)
