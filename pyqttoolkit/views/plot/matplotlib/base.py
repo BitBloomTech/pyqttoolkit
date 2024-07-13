@@ -29,6 +29,7 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from mpl_toolkits.axes_grid1 import Size, Divider
 from mpl_toolkits.axes_grid1.mpl_axes import Axes
+from matplotlib.projections import PolarAxes
 
 import pandas as pd
 
@@ -53,7 +54,7 @@ def _safe_limits(lower, upper):
     upper = _to_finite(upper)
     return min(lower, upper), max(lower, upper)
 
-class _SpanSeletor(SpanSelector):
+class _SpanSelector(SpanSelector):
     def __init__(self, *args, **kwargs):
         SpanSelector.__init__(self, *args, **kwargs)
         self._select_none_handler = None
@@ -133,7 +134,7 @@ class MatPlotLibBase(QWidget):
         self._axes.ticklabel_format(style='sci', axis='x', scilimits=(-4, 4))
         self._axes.ticklabel_format(style='sci', axis='y', scilimits=(-4, 4))
         self._active_tools = {}
-        self._span = _SpanSeletor(
+        self._span = _SpanSelector(
             self._axes, self._handle_span_select, 'horizontal',
             props=dict(alpha=0.2, facecolor='red', edgecolor='k'),
             interactive=True, drag_from_anywhere=True, handle_props=dict(alpha=0.0),
@@ -292,14 +293,17 @@ class MatPlotLibBase(QWidget):
             for child in handle.get_children():
                 self._set_series_visibility(child, visible)
 
-    def _update_grid_lines(self):
-        show_grid_lines = False if self._options_view is None else self._options_view.showGridLines
-        gridline_color = self._axes.spines['bottom'].get_edgecolor()
+    def _do_update_grid_lines(self, axes):
+        show_grid_lines = self._options_view and self._options_view.showGridLines
+        gridline_color = axes.spines[list(axes.spines.keys())[0]].get_edgecolor()
         gridline_color = gridline_color[0], gridline_color[1], gridline_color[2], 0.5
         kwargs = dict(color=gridline_color, alpha=0.5) if show_grid_lines else {}
-        self._axes.grid(show_grid_lines, **kwargs)
+        axes.grid(show_grid_lines, **kwargs)
         self.draw()
-    
+
+    def _update_grid_lines(self):
+        self._do_update_grid_lines(self._axes)
+
     def _handle_options_view_limit_changed(self, x_min_changed=False, x_max_changed=False, y_min_changed=False, y_max_changed=False):
         def _():
             if self._options_view is None or self._setting_axis_limits:
@@ -466,7 +470,7 @@ class MatPlotLibBase(QWidget):
         min_ -= diff * skew
         return min_, max_
     
-    def _set_axes_limits(self):
+    def _do_set_axes_limits(self, axes):
         try:
             self._setting_axis_limits = True
             if self._secondary_axes is not None:
@@ -475,14 +479,19 @@ class MatPlotLibBase(QWidget):
             (x_min, x_max), (y_min, y_max) = self._get_xy_extents()
             if self._options_view is not None:
                 if self._options_view.x_limits:
-                    self._options_view.setXLimits(float(x_min), float(x_max))
+                    self._options_view.setXLimits(
+                        float(np.degrees(x_min) if isinstance(axes, PolarAxes) else x_min),
+                        float(np.degrees(x_max) if isinstance(axes, PolarAxes) else x_max))
                 if self._options_view.y_limits:
                     self._options_view.setYLimits(float(y_min), float(y_max))
-            self._axes.set_xlim(*_safe_limits(x_min, x_max))
-            self._axes.set_ylim(*_safe_limits(y_min, y_max))
+            axes.set_xlim(*_safe_limits(x_min, x_max))
+            axes.set_ylim(*_safe_limits(y_min, y_max))
         finally:
             self._setting_axis_limits = False
-    
+
+    def _set_axes_limits(self):
+        self._do_set_axes_limits(self.axes)
+
     def _set_secondary_axes_limits(self):
         if self._options_view is not None:
             if self._options_view.secondary_y_limits:
@@ -677,23 +686,26 @@ class MatPlotLibBase(QWidget):
     def toolAvailable(self, _tool_type):
         return False
 
+    def _activate_span_tool(self, span_tool, active, axes=None):
+        if span_tool.active and not active:
+            self._previous_span = self.span
+            self.span = None
+            for r in [span_tool.rect]:
+                self._remove_artist(r)
+        elif not span_tool.active and active:
+            self.span = self._previous_span
+            for r in [span_tool.rect]:
+                self._add_artist(r, axes=axes)
+        span_tool.active = active
+        self.draw()
+        
     def activateTool(self, tool_type, active):
         if tool_type == ToolType.zoom:
             self._zoom_selector.set_active(active)
             if not active:
                 self._zoom_selector.clear()
         elif tool_type == ToolType.span:
-            if self._span.active and not active:
-                self._previous_span = self.span
-                self.span = None
-                for r in [self._span.rect]:
-                    self._remove_artist(r)
-            elif not self._span.active and active:
-                self.span = self._previous_span
-                for r in [self._span.rect]:
-                    self._add_artist(r)
-            self._span.active = active
-            self.draw()
+            self._activate_span_tool(self._span, active)
         elif tool_type == ToolType.pan:
             self._is_panning = active
         self._active_tools[tool_type] = active
@@ -704,8 +716,9 @@ class MatPlotLibBase(QWidget):
     def isActiveDefault(self, _tool_type):
         return False
 
-    def _add_artist(self, artist):
-        self._axes.add_artist(artist)
+    def _add_artist(self, artist, axes=None):
+        axes = axes or self._axes
+        axes.add_artist(artist)
         self._decoration_artists.append(artist)
     
     def _remove_artist(self, artist):
@@ -717,7 +730,8 @@ class MatPlotLibBase(QWidget):
         self._update_ticks()
         return self.draw()
 
-    def draw(self, artists=None):
+
+    def _draw(self, artists=None, axes=None):
         if artists is None:
             def _update():
                 for a in self._decoration_artists:
@@ -725,8 +739,8 @@ class MatPlotLibBase(QWidget):
                 self._canvas.draw()
                 self._background_cache = self._canvas.copy_from_bbox(self._figure.bbox)
                 for a in self._decoration_artists:
-                    self._axes.add_artist(a)
-                    self._axes.draw_artist(a)
+                    axes.add_artist(a)
+                    axes.draw_artist(a)
                 self._canvas.update()
             self._pending_draw = _update
         else:
@@ -735,10 +749,13 @@ class MatPlotLibBase(QWidget):
                     raise RuntimeError('Must run draw before drawing artists!')
                 self._canvas.restore_region(self._background_cache)
                 for a in artists:
-                    self._axes.draw_artist(a)
+                    axes.draw_artist(a)
                 self._canvas.update()
             self._pending_artists_draw = _update
-        
+
+    def draw(self, artists=None):
+        return self._draw(artists, self._axes)
+
     def _do_draw_events(self):
         if self._pending_draw is not None:
             self._pending_draw()
