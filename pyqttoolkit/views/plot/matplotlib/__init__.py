@@ -17,7 +17,7 @@
 """:mod:`matplotlib`
 Defines the matplotlib plot view
 """
-from .base import MatPlotLibBase
+from .base import MatPlotLibBase, _RectangleSelector, _SpanSelector
 from .font import MatPlotLibFont
 from .colormap import MatPlotLibColormap
 from .colorbar import MatPlotColorbar
