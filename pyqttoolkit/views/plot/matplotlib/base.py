@@ -29,7 +29,6 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from mpl_toolkits.axes_grid1 import Size, Divider
 from mpl_toolkits.axes_grid1.mpl_axes import Axes
-from matplotlib.projections import PolarAxes
 
 import pandas as pd
 
@@ -470,6 +469,9 @@ class MatPlotLibBase(QWidget):
         min_ -= diff * skew
         return min_, max_
     
+    def _ensure_x_limit(self, _axes, x_limit):
+        return float(x_limit)
+
     def _do_set_axes_limits(self, axes):
         try:
             self._setting_axis_limits = True
@@ -480,8 +482,8 @@ class MatPlotLibBase(QWidget):
             if self._options_view is not None:
                 if self._options_view.x_limits:
                     self._options_view.setXLimits(
-                        float(np.degrees(x_min) if isinstance(axes, PolarAxes) else x_min),
-                        float(np.degrees(x_max) if isinstance(axes, PolarAxes) else x_max))
+                        self._ensure_x_limit(axes, x_min),
+                        self._ensure_x_limit(axes, x_max))
                 if self._options_view.y_limits:
                     self._options_view.setYLimits(float(y_min), float(y_max))
             axes.set_xlim(*_safe_limits(x_min, x_max))
