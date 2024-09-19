@@ -62,7 +62,7 @@ def _cartesian_polar_selector(base_class):
         
         def _get_data(self, event):
             if self._polar_projection:
-                xdata = event.xdata if event.xdata > 0 else event.xdata + 2 * np.pi
+                xdata = event.xdata + 2 * np.pi if event.xdata < 0 else event.xdata
                 ydata = np.clip(event.ydata, *self.ax.get_ybound())
                 return xdata, ydata
             else:
