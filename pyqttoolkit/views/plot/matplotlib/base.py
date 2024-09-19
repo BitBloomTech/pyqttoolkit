@@ -29,6 +29,7 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from mpl_toolkits.axes_grid1 import Size, Divider
 from mpl_toolkits.axes_grid1.mpl_axes import Axes
+from matplotlib.projections.polar import PolarAxes
 
 import pandas as pd
 
@@ -53,9 +54,25 @@ def _safe_limits(lower, upper):
     upper = _to_finite(upper)
     return min(lower, upper), max(lower, upper)
 
-class _SpanSelector(SpanSelector):
+def _cartesian_polar_selector(base_class):
+    class _CartesianPolarSelector(base_class):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._polar_projection = isinstance(self.ax, PolarAxes)
+        
+        def _get_data(self, event):
+            if self._polar_projection:
+                xdata = event.xdata + 2 * np.pi if event.xdata < 0 else event.xdata
+                ydata = np.clip(event.ydata, *self.ax.get_ybound())
+                return xdata, ydata
+            else:
+                return super()._get_data(event)
+    
+    return _CartesianPolarSelector
+
+class _SpanSelector(_cartesian_polar_selector(SpanSelector)):
     def __init__(self, *args, **kwargs):
-        SpanSelector.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._select_none_handler = None
         self._min_span = 1.0
 
@@ -80,7 +97,7 @@ class _SpanSelector(SpanSelector):
     def set_min_span(self, min_span):
         self._min_span = min_span
 
-class _RectangleSelector(RectangleSelector):
+class _RectangleSelector(_cartesian_polar_selector(RectangleSelector)):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -670,11 +687,16 @@ class MatPlotLibBase(QWidget):
         self._span.active = True
         self._span_center_mouse_event = self._span_left_mouse_event = self._span_right_mouse_event = None
 
-    def _update_span_rect(self, x_min, x_max=None):
-        self._span.rect.set_x(x_min)
+    def _do_update_span_rect(self, span_tool, x_min, x_max):
+        if span_tool is None:
+            return
+        span_tool.rect.set_x(x_min)
         if x_max:
-            self._span.rect.set_width(x_max - x_min)
-        self._span.handles.set_data(self._span.extents)
+            span_tool.rect.set_width(x_max - x_min)
+        span_tool.handles.set_data(span_tool.extents)
+
+    def _update_span_rect(self, x_min, x_max=None):
+        self._do_update_span_rect(self._span, x_min, x_max)
     
     def _round_to_bin_width(self, x_min, x_max):
         return x_min, x_max

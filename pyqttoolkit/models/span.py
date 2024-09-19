@@ -17,10 +17,11 @@
 from PyQt5.QtCore import QObject
 
 class SpanModel(QObject):
-    def __init__(self, parent, left, right):
+    def __init__(self, parent, left, right, radians=False):
         QObject.__init__(self, parent)
         self._left = left
         self._right = right
+        self._radians = radians
     
     @property
     def left(self):
@@ -29,3 +30,7 @@ class SpanModel(QObject):
     @property
     def right(self):
         return self._right
+
+    @property
+    def radians(self):
+        return self._radians
