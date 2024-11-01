@@ -80,21 +80,24 @@ class ScriptRunner:
             self._context = None
         
     def _globals(self, context):
-        return {'__builtins__': {**__builtins__, '__import__': self._import, 'exit': self._exit, **{g: self._not_implemented for g in self._disallowed_globals}}}
+        return {'__builtins__': {**__builtins__, '__import__': self._import(builtins.__import__), 'exit': self._exit, **{g: self._not_implemented for g in self._disallowed_globals}}}
 
     def compile(self, script):
         return compile(script, 'code', 'exec')
     
-    def _import(self, module_name, *args, **kwargs):
-        if any(re.match(m, module_name) for m in self._disallowed_modules):
-            raise ImportError('Module not found')
-        try:
-                
-            with add_paths(self._additional_paths):
-                module = builtins.__import__(module_name, *args, **kwargs)
-            return module
-        except KeyError:
-            raise ImportError('Module not found')
+    def _import(self, import_function):
+        def _(module_name, *args, **kwargs):
+            if any(re.match(m, module_name) for m in self._disallowed_modules):
+                raise ImportError('Module not found')
+            try:
+                with add_paths(self._additional_paths):
+                    module = import_function(module_name, *args, **kwargs)
+                if module_name in 'importlib':
+                    module.import_module = self._import(importlib.import_module)
+                return module
+            except KeyError:
+                raise ImportError('Module not found')
+        return _
     
     def _additional_paths(self):
         return self._additional_paths
