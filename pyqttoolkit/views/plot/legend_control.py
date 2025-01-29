@@ -97,7 +97,14 @@ class LegendControlView(QWidget):
     @property
     def showSeries(self):
         return [ss.checked for ss in self._show_series]
-    
+
+    @showSeries.setter
+    def showSeries(self, values):
+        if len(values) != len(self._show_series):
+            raise ValueError('Invalid number of values')
+        for ss, value in zip(self._show_series, values):
+            ss.checked = value
+
     @property
     def seriesHandles(self):
         return self._handles
