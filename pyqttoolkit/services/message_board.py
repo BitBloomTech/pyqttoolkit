@@ -14,25 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from enum import Enum, IntEnum
 
 #pylint: disable=no-name-in-module
 from PyQt5.QtCore import QObject, pyqtSignal, Qt
 #pylint: enable=no-name-in-module
 
 from ..properties import AutoProperty
-
-class MessageType(Enum):
-    validation_error = 0
-    confirmation = 1
-    application_exception = 2
-
-class MessageResponse(IntEnum):
-    ok = 1
-    cancel = 2
-    save = 4
-    discard = 8
-    ignore = 16
+from ..data import MessageType, MessageResponse
 
 class MessageArgs:
     def __init__(self, message_type, message, checkbox_message, response_type, text_format):

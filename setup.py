@@ -11,7 +11,6 @@ with open(path.join(_here, 'README.md')) as fp:
     README_CONTENTS = fp.read()
 
 install_requires = [
-    'pyQt5',
     'matplotlib',
     'jinja2',
     'pandas',
@@ -30,7 +29,8 @@ tests_require = [
 
 extras_require = {
     'test': tests_require,
-    'publish': ['twine']
+    'publish': ['twine'],
+    'ui': ['pyqt5']
 }
 
 setup(
@@ -42,9 +42,9 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     license='GPLv3',
     version=versioneer.get_version(),
-    author='Simmovation Ltd',
-    author_email='info@simmovation.tech',
-    url='https://github.com/Simmovation/pyqttoolkit',
+    author='Bitbloom Ltd',
+    author_email='info@bitbloom.tech',
+    url='https://github.com/BitBloomTech/pyqttoolkit',
     platforms='any',
     description='A toolkit for PyQt 5',
     long_description=README_CONTENTS,
