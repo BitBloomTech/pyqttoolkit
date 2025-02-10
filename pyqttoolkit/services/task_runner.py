@@ -26,6 +26,7 @@ from PyQt5.QtWidgets import QApplication
 from concurrent.futures import ThreadPoolExecutor
 
 from ..properties import AutoProperty
+from ..exceptions import TaskCancelled
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,8 +72,6 @@ class BusyArgs(QObject):
         if self._cancellable:
             self.cancelled.emit()
 
-class TaskCancelled(Exception):
-    pass
 
 class Worker:
     def __init__(self, task_runner, f, args, busy_args, on_completed, on_cancelled, on_error, error_description):

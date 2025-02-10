@@ -14,8 +14,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-from .cache import Cache
-from .interval import calculate_interval
-from .bits import get_next_available_bit
-from .names import get_next_available_name
-from .message import MessageType, MessageResponse
+class TaskCancelled(Exception):
+    pass
