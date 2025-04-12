@@ -61,11 +61,14 @@ class DictTableModel(QAbstractTableModel):
             value = self._value[self._ids[index.row()]].get(self.displayProperties[index.column()])
             if value is None:
                 return None
-            if role == Qt.DisplayRole and isinstance(value, float):
-                return '{:0.2f}'.format(value)
-            return value
+            return self._format_value(value, index)
         return None
     
+    def _format_value(self, value, index):
+        if isinstance(value, float):
+            return '{:0.2f}'.format(value)
+        return value
+
     def setData(self, index, value, role=None):
         role = role or Qt.EditRole
         if role == Qt.EditRole:
