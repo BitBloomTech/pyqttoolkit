@@ -15,6 +15,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 from contextlib import contextmanager
+from functools import partial
 import re
 import builtins
 import sys
@@ -84,7 +85,19 @@ class ScriptRunner:
 
     def compile(self, script):
         return compile(script, 'code', 'exec')
-    
+
+    def _patch_plt_show(self, module):
+        def plt_show_as_show_figure(plt, block=None):
+            # Block is not used in the context of the script runner
+            for no, label in zip(plt.get_fignums(), plt.get_figlabels()):
+                self._context.show_figure(plt.figure(no), str(label))
+            plt.close('all')
+        if module.__name__ == 'matplotlib.pyplot':
+            module.show = partial(plt_show_as_show_figure, module)
+        if module.__name__ == 'matplotlib':
+            module.pyplot.show = partial(plt_show_as_show_figure, module.pyplot)
+        return module
+
     def _import(self, import_function):
         def _(module_name, *args, **kwargs):
             if any(re.match(m, module_name) for m in self._disallowed_modules):
@@ -94,7 +107,7 @@ class ScriptRunner:
                     module = import_function(module_name, *args, **kwargs)
                 if module_name in 'importlib':
                     module.import_module = self._import(importlib.import_module)
-                return module
+                return self._patch_plt_show(module)
             except KeyError:
                 raise ImportError('Module not found')
         return _
