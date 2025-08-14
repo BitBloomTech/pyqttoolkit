@@ -25,8 +25,9 @@ class ToolWindowService:
         self._dependency_container = dependency_contianer
         self._active_tools = []
     
-    def open(self, parent, model, name):
-        view = self._dependency_container.resolve_for(type(model), QWidget, {'parent': None})
+    def open(self, parent, model, name, *args, extras=None):
+        extras = {'parent': None, **(extras or {})}
+        view = self._dependency_container.resolve_for(type(model), QWidget, extras, *args)
         if hasattr(model, 'showButtons'):
             show_buttons = model.showButtons
         else:
