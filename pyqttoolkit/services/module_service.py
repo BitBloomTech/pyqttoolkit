@@ -119,7 +119,7 @@ class ModuleService(QObject):
         window_title = self._registered_modules[id_].title
         if self._project_manager.filename:
             window_title += f' - {basename(self._project_manager.filename)}'
-        elif self._project_manager.project_updater.dirty:
+        elif self._project_updater and self._project_updater.dirty:
             window_title += self.tr(' - unsaved')
         window = ModuleWindow(self._theme_manager, window_title, singleton)
         window.setAttribute(Qt.WA_DeleteOnClose)
