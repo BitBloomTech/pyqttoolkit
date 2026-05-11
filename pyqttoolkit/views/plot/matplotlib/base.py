@@ -887,11 +887,15 @@ class MatPlotLibBase(QWidget):
                 self._adjust_to_xticklabels_height(self._axes.get_xticklabels(), rotation)
 
         if hasattr(self.data, 'y_labels'):
-            step = self.data.y_tick_interval if hasattr(self.data, 'y_tick_interval') else None
-            y_ticks, y_labels, _ = self._get_labels(self.data.y_labels, step, horizontal=False)
-            self._axes.set_yticks(y_ticks)
-            self._axes.set_yticklabels(y_labels)
-            self._adjust_to_yticklabels_width(y_labels)
+            if all(isinstance(y, (np.datetime64, pd.Timestamp)) for y in self.data.y_labels):
+                y_labels = self.data.y_labels
+                self._update_date_yticks(y_labels)
+            else:
+                step = self.data.y_tick_interval if hasattr(self.data, 'y_tick_interval') else None
+                y_ticks, y_labels, _ = self._get_labels(self.data.y_labels, step, horizontal=False)
+                self._axes.set_yticks(y_ticks)
+                self._axes.set_yticklabels(y_labels)
+                self._adjust_to_yticklabels_width(y_labels)
 
     def _adjust_to_yticklabels_width(self, labels):
         sizes = self._divider.get_horizontal()
@@ -926,28 +930,34 @@ class MatPlotLibBase(QWidget):
         sizes[0] = Size.Fixed(height / self._figure.dpi)
         self._divider.set_vertical(sizes)
 
+    def _update_date_yticks(self, y_labels):
+        x_extent, y_extent = self._get_xy_extents()
+        ipositions, tick_formats, axis_label = self._determine_date_ticks(y_labels, self.axes.yaxis, self.data.yAxisTitle, y_extent)
+        self._axes.set_yticks(ipositions, tick_formats)
+        self._axes.set_ylabel(axis_label)
+        self._adjust_to_yticklabels_width(tick_formats)
+
     def _update_date_xticks(self, x_labels):
-        (x0, x1), _ = self._get_xy_extents()
-        imin, imax = max(0, math.floor(x0)), min(math.ceil(x1), len(x_labels) - 1)
-        date_num_min, date_num_max = mdates.date2num(x_labels[0]), mdates.date2num(x_labels[-1])
+        x_extent, y_extent = self._get_xy_extents()
+        ipositions, tick_formats, axis_label = self._determine_date_ticks(x_labels, self.axes.xaxis, self.data.xAxisTitle, x_extent)
+        self._axes.set_xticks(ipositions, tick_formats)
+        self._axes.set_xlabel(axis_label)
+
+    def _determine_date_ticks(self, labels, axis_obj, axis_title, extent):
+        e0, e1 = extent
+        imin, imax = max(0, math.floor(e0)), min(math.ceil(e1), len(labels) - 1)
+        date_num_min, date_num_max = mdates.date2num(labels[0]), mdates.date2num(labels[-1])
 
         locator = mdates.AutoDateLocator(maxticks=min(imax - imin, 25))
         offset_formats = ['', '%Y', '%Y-%b', '%Y-%b', '%Y-%m-%d', '%Y-%m-%d']
-        formatter = mdates.ConciseDateFormatter(self.axes.xaxis.get_major_locator(),
+        formatter = mdates.ConciseDateFormatter(axis_obj.get_major_locator(),
                                                 offset_formats=offset_formats)
 
-        tick_vals = locator.tick_values(x_labels[imin], x_labels[imax])
-
-        def _datenum2index(values):
-            return (len(x_labels) - 1) * (values - date_num_min) / (date_num_max - date_num_min) - 0.5
-
-        ipositions = _datenum2index(tick_vals)
+        tick_vals = locator.tick_values(labels[imin], labels[imax])
+        ipositions = (len(labels) - 1) * (tick_vals - date_num_min) / (date_num_max - date_num_min) - 0.5
         tick_formats = formatter.format_ticks(tick_vals)
-        self._axes.set_xticks(ipositions, tick_formats)
-        if formatter.get_offset():
-            self._axes.set_xlabel(f'{self.data.xAxisTitle} ({formatter.get_offset()})')
-        else:
-            self._axes.set_xlabel(self.data.xAxisTitle)
+        axis_label = f'{axis_title} ({formatter.get_offset()})' if formatter.get_offset() else axis_title
+        return ipositions, tick_formats, axis_label
 
     def _get_labels(self, labels, step, horizontal=True):
         (x0, x1), (y0, y1) = self._get_xy_extents()
