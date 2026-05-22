@@ -315,8 +315,8 @@ class MatPlotLibBase(QWidget):
     def _do_update_grid_lines(self, axes):
         show_grid_lines = self._options_view and self._options_view.showGridLines
         gridline_color = axes.spines[list(axes.spines.keys())[0]].get_edgecolor()
-        gridline_color = gridline_color[0], gridline_color[1], gridline_color[2]
-        kwargs = dict(color=gridline_color, alpha=0.5, linestyle='--') if show_grid_lines else {}
+        gridline_color = gridline_color[0], gridline_color[1], gridline_color[2], 0.5
+        kwargs = dict(color=gridline_color, alpha=0.5) if show_grid_lines else {}
         axes.grid(show_grid_lines, **kwargs)
         self.draw()
 
