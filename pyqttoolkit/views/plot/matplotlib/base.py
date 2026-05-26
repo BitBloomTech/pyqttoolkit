@@ -871,7 +871,7 @@ class MatPlotLibBase(QWidget):
         if not self.data:
             return
         if hasattr(self.data, 'x_labels'):
-            if all(isinstance(x, (np.datetime64, pd.Timestamp)) for x in self.data.x_labels):
+            if len(self.data.x_labels) > 0 and all(isinstance(x, (np.datetime64, pd.Timestamp)) for x in self.data.x_labels):
                 x_labels = self.data.x_labels
                 self._update_date_xticks(x_labels)
                 x_ticks_rotation = 0.0
@@ -884,10 +884,10 @@ class MatPlotLibBase(QWidget):
                 self._axes.xaxis.set_tick_params(labelrotation=rotation)
                 matplotlib.artist.setp(self._axes.get_xticklabels(),
                                        horizontalalignment='right' if rotation else 'center')
-                self._adjust_to_xticklabels_height(x_labels, rotation)
+                self._adjust_to_xticklabels_height(self._axes.get_xticklabels(), rotation)
 
         if hasattr(self.data, 'y_labels'):
-            if self.data.y_labels and all(isinstance(y, (np.datetime64, pd.Timestamp)) for y in self.data.y_labels):
+            if len(self.data.y_labels) > 0 and all(isinstance(y, (np.datetime64, pd.Timestamp)) for y in self.data.y_labels):
                 y_labels = self.data.y_labels
                 self._update_date_yticks(y_labels)
             else:
@@ -946,7 +946,10 @@ class MatPlotLibBase(QWidget):
     def _determine_date_ticks(self, labels, axis_obj, axis_title, extent):
         e0, e1 = extent
         imin, imax = max(0, math.floor(e0)), min(math.ceil(e1), len(labels) - 1)
-        date_num_min, date_num_max = mdates.date2num(labels[0]), mdates.date2num(labels[-1])
+        # Convert all labels to date numbers for robust min/max handling
+        label_dates = [mdates.date2num(lbl) for lbl in labels]
+        date_num_min = min(label_dates)
+        date_num_max = max(label_dates)
 
         locator = mdates.AutoDateLocator(maxticks=max(1, min(imax - imin, 25)))
         offset_formats = ['', '%Y', '%Y-%b', '%Y-%b', '%Y-%m-%d', '%Y-%m-%d']
@@ -960,11 +963,18 @@ class MatPlotLibBase(QWidget):
             axis_label = f'{axis_title} ({formatter.get_offset()})' if formatter.get_offset() else axis_title
             return ipositions, tick_formats, axis_label
 
-        tick_vals = locator.tick_values(labels[imin], labels[imax])
-        ipositions = (len(labels) - 1) * (tick_vals - date_num_min) / (date_num_max - date_num_min) - 0.5
+        # Ensure correct order for tick_values
+        if label_dates[imin] <= label_dates[imax]:
+            tick_vals = locator.tick_values(labels[imin], labels[imax])
+            ipositions = (len(labels) - 1) * (tick_vals - date_num_min) / (date_num_max - date_num_min) - 0.5
+        else:
+            tick_vals = locator.tick_values(labels[imax], labels[imin])
+            ipositions = (len(labels) - 1) * (tick_vals[::-1] - date_num_min) / (date_num_max - date_num_min) - 0.5
+
         tick_formats = formatter.format_ticks(tick_vals)
         axis_label = f'{axis_title} ({formatter.get_offset()})' if formatter.get_offset() else axis_title
         return ipositions, tick_formats, axis_label
+
 
     def _get_labels(self, labels, step, horizontal=True):
         (x0, x1), (y0, y1) = self._get_xy_extents()
