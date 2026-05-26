@@ -204,7 +204,7 @@ class MatPlotLibBase(QWidget):
         self._setting_axis_limits = False
 
         self.hasHiddenSeries = False
-        self._do_update_grid_lines(self._axes)
+        self._axes.grid(False)
 
     enabledToolsChanged = pyqtSignal()
     spanChanged = pyqtSignal(SpanModel)
@@ -884,10 +884,10 @@ class MatPlotLibBase(QWidget):
                 self._axes.xaxis.set_tick_params(labelrotation=rotation)
                 matplotlib.artist.setp(self._axes.get_xticklabels(),
                                        horizontalalignment='right' if rotation else 'center')
-                self._adjust_to_xticklabels_height(self._axes.get_xticklabels(), rotation)
+                self._adjust_to_xticklabels_height(x_labels, rotation)
 
         if hasattr(self.data, 'y_labels'):
-            if all(isinstance(y, (np.datetime64, pd.Timestamp)) for y in self.data.y_labels):
+            if self.data.y_labels and all(isinstance(y, (np.datetime64, pd.Timestamp)) for y in self.data.y_labels):
                 y_labels = self.data.y_labels
                 self._update_date_yticks(y_labels)
             else:
@@ -948,10 +948,17 @@ class MatPlotLibBase(QWidget):
         imin, imax = max(0, math.floor(e0)), min(math.ceil(e1), len(labels) - 1)
         date_num_min, date_num_max = mdates.date2num(labels[0]), mdates.date2num(labels[-1])
 
-        locator = mdates.AutoDateLocator(maxticks=min(imax - imin, 25))
+        locator = mdates.AutoDateLocator(maxticks=max(1, min(imax - imin, 25)))
         offset_formats = ['', '%Y', '%Y-%b', '%Y-%b', '%Y-%m-%d', '%Y-%m-%d']
-        formatter = mdates.ConciseDateFormatter(axis_obj.get_major_locator(),
+        formatter = mdates.ConciseDateFormatter(locator,
                                                 offset_formats=offset_formats)
+
+        if date_num_max == date_num_min:
+            tick_vals = np.array([date_num_min])
+            ipositions = np.array([(imin + imax) / 2.0])
+            tick_formats = formatter.format_ticks(tick_vals)
+            axis_label = f'{axis_title} ({formatter.get_offset()})' if formatter.get_offset() else axis_title
+            return ipositions, tick_formats, axis_label
 
         tick_vals = locator.tick_values(labels[imin], labels[imax])
         ipositions = (len(labels) - 1) * (tick_vals - date_num_min) / (date_num_max - date_num_min) - 0.5
