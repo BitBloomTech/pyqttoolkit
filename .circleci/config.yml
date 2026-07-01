@@ -19,7 +19,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/python:3.6
+      - image: cimg/python:3.14.6
 
     working_directory: ~/repo
 
@@ -47,7 +47,7 @@ jobs:
           name: run tests
           command: |
             . .venv/bin/activate
-            tox -e py36
+            tox -e py314
 
       - save_cache:
           paths:
@@ -71,7 +71,7 @@ jobs:
 
   deploy:
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.14.6
     steps:
       - checkout
       # Download and cache dependencies

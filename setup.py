@@ -23,8 +23,7 @@ tests_require = [
     'pytest-cov',
     'pytest-xvfb',
     'pytest-asyncio',
-    'pytest-qt',
-    'licensify'
+    'pytest-qt'
 ]
 
 extras_require = {
@@ -49,5 +48,5 @@ setup(
     description='A toolkit for PyQt 5',
     long_description=README_CONTENTS,
     long_description_content_type='text/markdown',
-    python_requires='>=3.6'
+    python_requires='>=3.14'
 )

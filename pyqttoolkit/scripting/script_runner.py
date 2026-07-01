@@ -72,8 +72,10 @@ class ScriptRunner:
         try:
             self._context = context
             with redirect_output(self._context, self._skip_empty_output_lines):
+                namespace = self._globals(context)
+                namespace.update(context.locals)
                 #pylint: disable=exec-used
-                exec(code, self._globals(context), context.locals)
+                exec(code, namespace, namespace)
                 #pylint: enable=exec-used
         except ScriptStopped:
             pass
