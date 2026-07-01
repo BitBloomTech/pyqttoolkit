@@ -178,6 +178,8 @@ class TaskRunner(QObject):
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='TaskRunner_Thread')
 
     def shutdown(self, wait=True):
+        # Tests and short-lived apps need an explicit way to join worker
+        # threads before QApplication teardown.
         self._executor.shutdown(wait=wait)
 
     def run_task(self, task_function, task_args=None, on_completed=None, on_cancelled=None, on_error=None, description=None, error_description=None, show_progress=True, cancellable=False, force_indeterminate_start=False, **kwargs):
