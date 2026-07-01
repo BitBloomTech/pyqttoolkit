@@ -28,7 +28,7 @@ tests_require = [
 
 extras_require = {
     'test': tests_require,
-    'publish': ['twine'],
+    'publish': ['setuptools', 'twine'],
     'ui': ['pyqt5']
 }
 
