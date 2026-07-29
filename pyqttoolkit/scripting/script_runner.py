@@ -72,8 +72,13 @@ class ScriptRunner:
         try:
             self._context = context
             with redirect_output(self._context, self._skip_empty_output_lines):
+                # Use one namespace so functions defined by the script can
+                # resolve each other recursively through their globals. Add
+                # runner globals last so context locals cannot replace
+                # protected entries such as __builtins__.
+                namespace = {**context.locals, **self._globals(context)}
                 #pylint: disable=exec-used
-                exec(code, self._globals(context), context.locals)
+                exec(code, namespace, namespace)
                 #pylint: enable=exec-used
         except ScriptStopped:
             pass

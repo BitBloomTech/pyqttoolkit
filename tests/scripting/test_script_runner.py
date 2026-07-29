@@ -31,6 +31,11 @@ def test_cannot_import_blacklisted_module(module):
     with pytest.raises(ImportError):
         ScriptRunner().run(script, ScriptContext())
 
+def test_context_cannot_override_runner_builtins():
+    context = ScriptContext(__builtins__={'__import__': __import__})
+    with pytest.raises(ImportError):
+        ScriptRunner().run('import inspect', context)
+
 @pytest.mark.parametrize('module', [
     'math', 'pandas'
 ])

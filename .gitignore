@@ -1,5 +1,5 @@
 .*
+!.gitignore
+!.python-version
 *.egg-info
 **/__pycache__/**
-!.gitignore
-*.egg-info

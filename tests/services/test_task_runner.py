@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QApplication
 
 from pyqttoolkit.services.task_runner import *
 from pytestqt.exceptions import capture_exceptions
-from pytestqt.qt_compat import qt_api
 
 class Result:
     def __init__(self):
@@ -22,8 +21,10 @@ class Result:
 
 @pytest.fixture
 def task_runner(qtbot):
-    app = QApplication([])
-    yield TaskRunner(app)
+    app = QApplication.instance() or QApplication([])
+    runner = TaskRunner(app)
+    yield runner
+    runner.shutdown()
 
 def _handler(event, result=None):
     def _(value):
@@ -115,7 +116,7 @@ def test_error_raised_if_no_error_handler(qtbot, task_runner):
     with capture_exceptions() as exceptions:
         task_runner.run_task(_task)
         time.sleep(1)
-        qt_api.QApplication.instance().processEvents()
+        QApplication.instance().processEvents()
     assert len(exceptions) == 1
     assert exceptions[0][1] == exception
 
