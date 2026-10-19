@@ -35,9 +35,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "setup.py" }}
+          - v2-dependencies-{{ checksum "setup.py" }}-{{ checksum "pyproject.toml" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+          - v2-dependencies-
 
       # install dependencies
       - run:
@@ -46,7 +46,7 @@ jobs:
             python3 -m venv .venv
             . .venv/bin/activate
             pip install --upgrade pip
-            pip install .[ui,test,publish]
+            pip install '.[ui,test,publish]'
 
       # run tests!
       - run:
@@ -55,12 +55,19 @@ jobs:
             . .venv/bin/activate
             tox -e py314
 
+      - run:
+          name: Validate distribution packages
+          command: |
+            . .venv/bin/activate
+            python -m build
+            python -m twine check --strict dist/*
+
       - save_cache:
           paths:
             - ./.venv
             - ./.tox
             - .coverage
-          key: v1-dependencies-{{ checksum "setup.py" }}
+          key: v2-dependencies-{{ checksum "setup.py" }}-{{ checksum "pyproject.toml" }}
 
       # - run:
       #     name: Generate reports
@@ -83,9 +90,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "setup.py" }}
+          - v2-dependencies-{{ checksum "setup.py" }}-{{ checksum "pyproject.toml" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+          - v2-dependencies-
 
       # install dependencies
       - run:
@@ -94,13 +101,14 @@ jobs:
             python3 -m venv .venv
             . .venv/bin/activate
             pip install --upgrade pip
-            pip install .[test,publish]
+            pip install '.[publish]'
 
       - run:
           name: Build packages
           command: |
             . .venv/bin/activate
-            python setup.py sdist
+            python -m build
+            python -m twine check --strict dist/*
       
       - run:
           name: Initialise .pypirc
@@ -114,4 +122,4 @@ jobs:
           name: Upload package
           command: |
             . .venv/bin/activate
-            twine upload dist/*
+            python -m twine upload dist/*

@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages
 from os import path
+import sys
 
+# The build backend may execute setup.py without the source root on sys.path.
+sys.path.insert(0, path.abspath(path.dirname(__file__)))
 import versioneer
 
 PACKAGE_NAME = 'pyqttoolkit'
@@ -12,13 +15,13 @@ with open(path.join(_here, 'README.md')) as fp:
 
 install_requires = [
     'matplotlib',
-    'jinja2',
+    'jinja2>=3.1.6',
     'pandas',
     'appdirs'
 ]
 
 tests_require = [
-    'tox',
+    'tox>=4',
     'pytest',
     'pytest-cov',
     'pytest-xvfb',
@@ -28,14 +31,13 @@ tests_require = [
 
 extras_require = {
     'test': tests_require,
-    'publish': ['setuptools', 'twine'],
+    'publish': ['build>=1.6.1', 'twine>=7.0.0'],
     'ui': ['pyqt5']
 }
 
 setup(
     name=PACKAGE_NAME,
     install_requires=install_requires,
-    tests_require=tests_require,
     extras_require=extras_require,
     packages=find_packages(exclude=('tests*',)),
     cmdclass=versioneer.get_cmdclass(),
